@@ -4,3 +4,8 @@
 
 [node name="TestBench" type="Node"]
 script = ExtResource("1_2k1in")
+input_vectors_size = 70000
+learning_rate = 0.01
+epochs = 50
+batch_size = 256
+test_size = 0.8
