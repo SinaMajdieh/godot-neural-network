@@ -1,0 +1,14 @@
+.import/
+.export/
+*.tmp
+*.log
+*.bin
+*.exe
+*.dll
+*.pdb
+*.cache
+*.mono/
+*.godot/
+*.uid
+*.godot
+.editorconfig

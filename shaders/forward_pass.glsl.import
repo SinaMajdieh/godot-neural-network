@@ -1,0 +1,14 @@
+[remap]
+
+importer="glsl"
+type="RDShaderFile"
+uid="uid://dscrg75p2avmf"
+path="res://.godot/imported/forward_pass.glsl-3cef81880d0e7445b51729b4f4679516.res"
+
+[deps]
+
+source_file="res://shaders/forward_pass.glsl"
+dest_files=["res://.godot/imported/forward_pass.glsl-3cef81880d0e7445b51729b4f4679516.res"]
+
+[params]
+
