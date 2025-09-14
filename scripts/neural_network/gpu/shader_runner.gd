@@ -6,7 +6,6 @@ class_name ShaderRunner
 ## Handles shader compilation, buffer creation, uniform binding, and pipeline execution.
 ##
 
-# Rendering device and shader pipelines
 var rd: RenderingDevice
 var forward_shader: RID
 var forward_pipeline: RID
@@ -15,9 +14,6 @@ var backward_pipeline: RID
 
 ##
 ## Initializes the rendering device and compiles both forward and backward shaders.
-##
-## @param forward_shader_path Path to forward shader SPIR-V bytecode
-## @param backward_shader_path Path to backward shader SPIR-V bytecode
 ##
 func _init(forward_shader_path: String, backward_shader_path: String) -> void:
     rd = RenderingServer.create_local_rendering_device()
@@ -29,9 +25,6 @@ func _init(forward_shader_path: String, backward_shader_path: String) -> void:
 ##
 ## Loads and compiles a compute shader from SPIR-V bytecode.
 ##
-## @param path File path to SPIR-V bytecode
-## @return Compiled shader RID
-##
 func _load_shader(path: String) -> RID:
     var spirv_bytes: PackedByteArray = FileAccess.get_file_as_bytes(path)
     var spirv: RDShaderSPIRV = RDShaderSPIRV.new()
@@ -39,10 +32,7 @@ func _load_shader(path: String) -> RID:
     return rd.shader_create_from_spirv(spirv)
 
 ##
-## Creates a GPU buffer from a PackedFloat32Array.
-##
-## @param data Float array to upload
-## @return Storage buffer RID
+## Creates a GPU buffer from a float array.
 ##
 func create_buffer(data: PackedFloat32Array) -> RID:
     var byte_data: PackedByteArray = data.to_byte_array()
@@ -50,9 +40,6 @@ func create_buffer(data: PackedFloat32Array) -> RID:
 
 ##
 ## Creates an empty GPU buffer of specified float size.
-##
-## @param size_in_floats Number of floats to allocate
-## @return Empty storage buffer RID
 ##
 func create_empty_buffer(size_in_floats: int) -> RID:
     var byte_data: PackedByteArray = PackedByteArray()
@@ -62,62 +49,45 @@ func create_empty_buffer(size_in_floats: int) -> RID:
 ##
 ## Retrieves data from a GPU buffer.
 ##
-## @param buffer Buffer RID to read from
-## @return Byte array containing buffer contents
-##
 func get_buffer_data(buffer: RID) -> PackedByteArray:
     return rd.buffer_get_data(buffer)
 
 ##
-## Dispatches the forward compute shader with input, weights, and biases.
+## Dispatches the forward shader with input, weights, biases, and metadata.
 ##
-## @param input_buf Input buffer RID
-## @param weights Flat weight array
-## @param biases Flat bias array
-## @param input_size Number of input neurons
-## @param output_size Number of output neurons
-## @param num_vectors Number of input samples
-## @return Output buffer RID
-##
-func dispatch_forward(
-    input_buf: RID,
-    weights: PackedFloat32Array,
-    biases: PackedFloat32Array,
-    input_size: int,
-    output_size: int,
-    num_vectors: int
+func dispatch_full_network(
+    flat_inputs: PackedFloat32Array,
+    flat_weights: PackedFloat32Array,
+    flat_biases: PackedFloat32Array,
+    meta_data: PackedByteArray,
+    intermediate_size: int,
+    total_threads: int
 ) -> RID:
-    var weight_buf: RID = create_buffer(weights)
-    var bias_buf: RID = create_buffer(biases)
-    var output_buf: RID = create_empty_buffer(output_size * num_vectors)
-    var meta_buf: RID = _create_meta_buffer(input_size, output_size, num_vectors)
+    var input_buf: RID = create_buffer(flat_inputs)
+    var weight_buf: RID = create_buffer(flat_weights)
+    var bias_buf: RID = create_buffer(flat_biases)
+    var interm_buf: RID = create_empty_buffer(intermediate_size)
+    var meta_buf: RID = rd.storage_buffer_create(meta_data.size(), meta_data)
 
     var uniform_set: RID = _create_uniform_set([
         _create_uniform(input_buf, 0),
         _create_uniform(weight_buf, 1),
         _create_uniform(bias_buf, 2),
-        _create_uniform(output_buf, 3),
-        _create_uniform(meta_buf, 4, true)
+        _create_uniform(interm_buf, 3),
+        _create_uniform(meta_buf, 4)
     ], forward_shader)
 
-    _dispatch_compute(forward_pipeline, uniform_set, output_size * num_vectors)
+    _dispatch_compute(forward_pipeline, uniform_set, total_threads)
 
+    rd.free_rid(input_buf)
     rd.free_rid(weight_buf)
     rd.free_rid(bias_buf)
     rd.free_rid(meta_buf)
 
-    return output_buf
+    return interm_buf
 
 ##
-## Dispatches the backward compute shader with activations, errors, and inputs.
-##
-## @param activation_buf Activation buffer RID
-## @param error_buf Error buffer RID
-## @param input_buf Input buffer RID
-## @param input_size Number of input neurons
-## @param output_size Number of output neurons
-## @param num_vectors Number of input samples
-## @return Array containing weight and bias gradient buffer RIDs
+## Dispatches the backward shader to compute gradients.
 ##
 func dispatch_backward(
     activation_buf: RID,
@@ -150,12 +120,7 @@ func dispatch_backward(
     return [weight_grad_buf, bias_grad_buf]
 
 ##
-## Creates a uniform buffer containing metadata (input/output sizes, batch size).
-##
-## @param input_size Number of input neurons
-## @param output_size Number of output neurons
-## @param num_vectors Number of input samples
-## @return Uniform buffer RID
+## Creates a uniform buffer for backward shader metadata.
 ##
 func _create_meta_buffer(input_size: int, output_size: int, num_vectors: int) -> RID:
     var meta_data: PackedByteArray = PackedByteArray()
@@ -166,12 +131,47 @@ func _create_meta_buffer(input_size: int, output_size: int, num_vectors: int) ->
     return rd.uniform_buffer_create(meta_data.size(), meta_data)
 
 ##
-## Creates a single RDUniform for a buffer.
+## Builds a std430-compatible metadata buffer for forward shader.
 ##
-## @param buffer Buffer RID
-## @param binding Binding index
-## @param is_uniform Whether the buffer is a uniform buffer
-## @return RDUniform instance
+static func build_meta_buffer(
+    layer_count: int,
+    batch_size: int,
+    input_sizes: Array[int],
+    output_sizes: Array[int],
+    weight_offsets: Array[int],
+    bias_offsets: Array[int],
+    interm_offsets: Array[int]
+) -> PackedByteArray:
+    const MAX_LAYERS: int = 32
+    const HEADER_UINTS: int = 2
+    const ARRAYS_PER_META: int = 5
+
+    var meta_bytes: PackedByteArray = PackedByteArray()
+    meta_bytes.resize((HEADER_UINTS + ARRAYS_PER_META * MAX_LAYERS) * 4)
+
+    meta_bytes.encode_u32(0, layer_count)
+    meta_bytes.encode_u32(4, batch_size)
+
+    _encode_array_to_meta(meta_bytes, input_sizes, 0, MAX_LAYERS)
+    _encode_array_to_meta(meta_bytes, output_sizes, 1, MAX_LAYERS)
+    _encode_array_to_meta(meta_bytes, weight_offsets, 2, MAX_LAYERS)
+    _encode_array_to_meta(meta_bytes, bias_offsets, 3, MAX_LAYERS)
+    _encode_array_to_meta(meta_bytes, interm_offsets, 4, MAX_LAYERS)
+
+    return meta_bytes
+
+##
+## Writes an integer array into a specific slot in the std430 layout.
+##
+static func _encode_array_to_meta(meta_bytes: PackedByteArray, arr: Array[int], slot_index: int, max_len: int) -> void:
+    var base: int = 8
+    for i: int in range(max_len):
+        var value: int = arr[i] if i < arr.size() else 0
+        var byte_pos: int = base + ((slot_index * max_len + i) * 4)
+        meta_bytes.encode_u32(byte_pos, value)
+
+##
+## Creates a single RDUniform for a buffer.
 ##
 func _create_uniform(buffer: RID, binding: int, is_uniform: bool = false) -> RDUniform:
     var uniform: RDUniform = RDUniform.new()
@@ -186,19 +186,11 @@ func _create_uniform(buffer: RID, binding: int, is_uniform: bool = false) -> RDU
 ##
 ## Creates a uniform set from a list of RDUniforms and a shader.
 ##
-## @param uniforms Array of RDUniforms
-## @param shader Shader RID
-## @return Uniform set RID
-##
 func _create_uniform_set(uniforms: Array[RDUniform], shader: RID) -> RID:
     return rd.uniform_set_create(uniforms, shader, 0)
 
 ##
 ## Dispatches a compute shader with the given pipeline and uniform set.
-##
-## @param pipeline Compute pipeline RID
-## @param uniform_set Uniform set RID
-## @param total_threads Total number of threads to dispatch
 ##
 func _dispatch_compute(pipeline: RID, uniform_set: RID, total_threads: int) -> void:
     var compute_list: int = rd.compute_list_begin()

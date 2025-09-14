@@ -1,11 +1,9 @@
 [gd_scene load_steps=2 format=3 uid="uid://dwcseuf47mq7l"]
 
-[ext_resource type="Script" uid="uid://2wfh6roqy4vu" path="res://scripts/test_benchs/test_bench.gd" id="1_2k1in"]
+[ext_resource type="Script" uid="uid://cb4eyoggxbi4l" path="res://scripts/test_benchs/test_bench_real_data.gd" id="1_2k1in"]
 
 [node name="TestBench" type="Node"]
 script = ExtResource("1_2k1in")
-input_vectors_size = 70000
-learning_rate = 0.01
-epochs = 50
-batch_size = 256
-test_size = 0.8
+learning_rate = 0.100001
+epochs = 70
+batch_size = 1024

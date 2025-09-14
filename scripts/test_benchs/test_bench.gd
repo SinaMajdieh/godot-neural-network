@@ -23,8 +23,8 @@ extends Node
 ##
 func _ready() -> void:
     var shader_runner: ShaderRunner = ShaderRunner.new(
-        "res://shaders/forward_pass.spv",
-        "res://shaders/backward_pass.spv"
+        "res://scripts/neural_network/gpu/shaders/forward_pass.spv",
+        "res://scripts/neural_network/gpu/shaders/backward_pass.spv"
     )
 
     var network: NeuralNetwork = NeuralNetwork.new(layers, shader_runner)

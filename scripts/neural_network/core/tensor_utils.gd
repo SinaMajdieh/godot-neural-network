@@ -7,7 +7,7 @@ class_name TensorUtils
 ##
 
 ##
-## Flattens a batch of PackedFloat32Array vectors into a single PackedFloat32Array.
+## Flattens a batch of vectors into a single PackedFloat32Array.
 ##
 ## @param batch Array of PackedFloat32Array vectors
 ## @return Flattened PackedFloat32Array
@@ -19,11 +19,11 @@ static func flatten_batch(batch: Array[PackedFloat32Array]) -> PackedFloat32Arra
     return flat
 
 ##
-## Reshapes a flat PackedFloat32Array into an array of PackedFloat32Array vectors.
+## Reshapes a flat array into a batch of vectors.
 ##
 ## @param flat Flattened data
 ## @param vector_size Number of elements per vector
-## @return Array of reshaped PackedFloat32Array vectors
+## @return Array of PackedFloat32Array vectors
 ##
 static func unflatten_batch(flat: PackedFloat32Array, vector_size: int) -> Array[PackedFloat32Array]:
     var batch: Array[PackedFloat32Array] = []
@@ -36,10 +36,10 @@ static func unflatten_batch(flat: PackedFloat32Array, vector_size: int) -> Array
     return batch
 
 ##
-## Converts a PackedByteArray to a PackedFloat32Array.
+## Converts a byte array into a float array.
 ##
-## @param bytes Byte array containing encoded float data
-## @return Decoded float array
+## @param bytes PackedByteArray containing encoded float data
+## @return Decoded PackedFloat32Array
 ##
 static func bytes_to_floats(bytes: PackedByteArray) -> PackedFloat32Array:
     var floats: PackedFloat32Array = PackedFloat32Array()
@@ -49,10 +49,10 @@ static func bytes_to_floats(bytes: PackedByteArray) -> PackedFloat32Array:
     return floats
 
 ##
-## Converts a PackedFloat32Array to a PackedByteArray.
+## Converts a float array into a byte array.
 ##
-## @param floats Float array to encode
-## @return Encoded byte array
+## @param floats PackedFloat32Array to encode
+## @return Encoded PackedByteArray
 ##
 static func floats_to_bytes(floats: PackedFloat32Array) -> PackedByteArray:
     return floats.to_byte_array()
@@ -85,7 +85,7 @@ static func reshape_weights(flat: PackedFloat32Array, input_size: int, output_si
 ## @param inputs Array of input vectors
 ## @param targets Array of target vectors
 ## @param batch_size Number of samples per batch
-## @return Array of dictionaries with "inputs" and "targets"
+## @return Array of dictionaries with keys "inputs" and "targets"
 ##
 static func create_batches(inputs: Array[PackedFloat32Array], targets: Array[PackedFloat32Array], batch_size: int) -> Array[Dictionary]:
     var batches: Array[Dictionary] = []
@@ -101,7 +101,7 @@ static func create_batches(inputs: Array[PackedFloat32Array], targets: Array[Pac
     return batches
 
 ##
-## Shuffles input and target data in-place using a shared index permutation.
+## Shuffles input and target data in-place using a shared permutation.
 ##
 ## @param inputs Array of input vectors
 ## @param targets Array of target vectors
