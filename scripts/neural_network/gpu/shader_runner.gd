@@ -34,7 +34,7 @@ func _load_shader(path: String) -> RID:
 ##
 ## Creates a GPU buffer from a float array.
 ##
-func create_buffer(data: PackedFloat32Array) -> RID:
+func create_buffer(data) -> RID:
     var byte_data: PackedByteArray = data.to_byte_array()
     return rd.storage_buffer_create(byte_data.size(), byte_data)
 
@@ -59,6 +59,7 @@ func dispatch_full_network(
     flat_inputs: PackedFloat32Array,
     flat_weights: PackedFloat32Array,
     flat_biases: PackedFloat32Array,
+    layer_activations: PackedInt32Array,
     meta_data: PackedByteArray,
     intermediate_size: int,
     total_threads: int
@@ -66,6 +67,7 @@ func dispatch_full_network(
     var input_buf: RID = create_buffer(flat_inputs)
     var weight_buf: RID = create_buffer(flat_weights)
     var bias_buf: RID = create_buffer(flat_biases)
+    var activation_buf: RID = create_buffer(layer_activations)
     var interm_buf: RID = create_empty_buffer(intermediate_size)
     var meta_buf: RID = rd.storage_buffer_create(meta_data.size(), meta_data)
 
@@ -73,8 +75,9 @@ func dispatch_full_network(
         _create_uniform(input_buf, 0),
         _create_uniform(weight_buf, 1),
         _create_uniform(bias_buf, 2),
-        _create_uniform(interm_buf, 3),
-        _create_uniform(meta_buf, 4)
+        _create_uniform(activation_buf, 3),
+        _create_uniform(interm_buf, 4),
+        _create_uniform(meta_buf, 5)
     ], forward_shader)
 
     _dispatch_compute(forward_pipeline, uniform_set, total_threads)
@@ -90,13 +93,18 @@ func dispatch_full_network(
 ## Dispatches the backward shader to compute gradients.
 ##
 func dispatch_backward(
-    activation_buf: RID,
-    error_buf: RID,
-    input_buf: RID,
+    activation: PackedFloat32Array,
+    error: PackedFloat32Array,
+    input: PackedFloat32Array,
+    layer_activation: PackedInt32Array,
     input_size: int,
     output_size: int,
     num_vectors: int
 ) -> Array[RID]:
+    var activation_buf: RID = create_buffer(activation)
+    var error_buf: RID = create_buffer(error)
+    var input_buf: RID = create_buffer(input)
+    var layer_activation_buf: RID = create_buffer(layer_activation)
     var weight_grad_buf: RID = create_empty_buffer(input_size * output_size)
     var bias_grad_buf: RID = create_empty_buffer(output_size)
     var meta_buf: RID = _create_meta_buffer(input_size, output_size, num_vectors)
@@ -105,9 +113,10 @@ func dispatch_backward(
         _create_uniform(activation_buf, 0),
         _create_uniform(error_buf, 1),
         _create_uniform(input_buf, 2),
-        _create_uniform(weight_grad_buf, 3),
-        _create_uniform(bias_grad_buf, 4),
-        _create_uniform(meta_buf, 5, true)
+        _create_uniform(layer_activation_buf, 3),
+        _create_uniform(weight_grad_buf, 4),
+        _create_uniform(bias_grad_buf, 5),
+        _create_uniform(meta_buf, 6, true)
     ], backward_shader)
 
     _dispatch_compute(backward_pipeline, uniform_set, output_size * num_vectors)

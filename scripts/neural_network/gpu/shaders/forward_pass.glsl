@@ -1,4 +1,11 @@
 #version 450
+#define ACT_LINEAR       0
+#define ACT_SIGMOID      1
+#define ACT_TANH         2
+#define ACT_RELU         3
+#define ACT_LEAKY_RELU   4
+#define ACT_SOFTMAX      5
+
 layout(local_size_x = 64) in;
 
 //
@@ -16,11 +23,15 @@ layout(std430, binding = 2) buffer BiasBuffer {
     float biases[];
 };
 
-layout(std430, binding = 3) buffer IntermediatesBuffer {
+layout(std430, binding = 3) buffer ActivationTypeBuffer {
+    uint activation_types[]; // One per layer
+};
+
+layout(std430, binding = 4) buffer IntermediatesBuffer {
     float intermediates[];
 };
 
-layout(std430, binding = 4) buffer MetaBuffer {
+layout(std430, binding = 5) buffer MetaBuffer {
     uint layer_count;
     uint batch_size;
     uint input_sizes[32];
@@ -30,34 +41,47 @@ layout(std430, binding = 4) buffer MetaBuffer {
     uint interm_offsets[32];
 };
 
+
 //
-// === Activation ===
+// === Activation Functions ===
 //
+float activate_sigmoid(float x) {
+    //x = clamp(x, -20.0, 20.0);
+    x = 1.0 / (1.0 + exp(-x));
+    return x;
+}
+
 float activate_tanh(float x) {
+    x = clamp(x, -10.0, 10.0);
     float e_pos = exp(x);
     float e_neg = exp(-x);
     return (e_pos - e_neg) / (e_pos + e_neg);
 }
 
-float safe_activation(float x) {
-    float act = activate_tanh(x);
+float activate_relu(float x) {
+    return max(0.0, x);
+}
 
-    // Clamp if NaN or Inf
-    if (isnan(act) || isinf(act)) {
-        //return 0.0; // or use tanh(0.0) = 0.0
-        // Optional: clamp extreme values
-        return clamp(act, -10.0, 10.0);
-    }
+float activate_leaky_relu(float x) {
+    return x > 0.0 ? x : 0.01 * x;
+}
 
-    // Optional: clamp extreme values
-    return clamp(act, -10.0, 10.0);
+float apply_activation(float x, uint layer_idx) {
+    uint act_type = activation_types[layer_idx];
+
+    if (act_type == ACT_LINEAR)      return x;
+    if (act_type == ACT_SIGMOID)     return activate_sigmoid(x);
+    if (act_type == ACT_TANH)        return activate_tanh(x);
+    if (act_type == ACT_RELU)        return activate_relu(x);
+    if (act_type == ACT_LEAKY_RELU)  return activate_leaky_relu(x);
+    // if (act_type == ACT_SOFTMAX)  // Typically applied across vector, not per neuron
+
+    return x; // Fallback
 }
 
 
 //
 // === Main Kernel ===
-// Each thread -> 1 neuron for 1 sample in *first* layer
-// Then loop over layers sequentially, reusing same thread ID logic
 //
 void main() {
     uint global_id = gl_GlobalInvocationID.x;
@@ -65,7 +89,6 @@ void main() {
     uint batch = batch_size;
     uint neurons_first_layer = output_sizes[0];
 
-    // Map thread to sample index and neuron index in first layer
     uint sample_idx = global_id / neurons_first_layer;
     uint neuron_idx = global_id % neurons_first_layer;
 
@@ -73,21 +96,17 @@ void main() {
         return;
     }
 
-    // We'll process *each* layer serially per thread
     for (uint layer_idx = 0u; layer_idx < layer_count; ++layer_idx) {
         uint in_size  = input_sizes[layer_idx];
         uint out_size = output_sizes[layer_idx];
 
-        // Only threads for valid neurons in this layer do work
         if (neuron_idx < out_size) {
             uint w_off = weight_offsets[layer_idx];
             uint b_off = bias_offsets[layer_idx];
             uint out_off_layer = interm_offsets[layer_idx];
 
-            // Source data: for layer 0, from inputs[]
-            // Otherwise, from intermediates[] of previous layer
             float sum = biases[b_off + neuron_idx];
-            for (uint i = 0u; i < in_size; ++i) {
+            for (uint i = 0u; i < in_size; ++i){
                 float in_val;
                 if (layer_idx == 0u) {
                     in_val = inputs[sample_idx * in_size + i];
@@ -99,11 +118,10 @@ void main() {
                 sum += in_val * w_val;
             }
 
-            intermediates[out_off_layer + sample_idx * out_size + neuron_idx] = safe_activation(sum);
+            float activated = apply_activation(sum, layer_idx);
+            intermediates[out_off_layer + sample_idx * out_size + neuron_idx] = activated;
         }
 
-        // Update neuron index mapping for next layer
-        // Every thread re-maps based on first layer indexing
         neurons_first_layer = out_size;
         neuron_idx = global_id % neurons_first_layer;
     }

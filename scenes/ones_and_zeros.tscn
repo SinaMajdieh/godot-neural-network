@@ -1,0 +1,12 @@
+[gd_scene load_steps=2 format=3 uid="uid://7rovlvgmqcrb"]
+
+[ext_resource type="Script" uid="uid://dh1u22dl6bxgt" path="res://scripts/test_benchs/ones_and_zeros.gd" id="1_gk73b"]
+
+[node name="OnesAndZeros" type="Node"]
+script = ExtResource("1_gk73b")
+zeros_dir = "C:/Users/sinam/Desktop/test/0"
+ones_dir = "C:/Users/sinam/Desktop/test/1"
+layers = Array[int]([1024, 16, 8, 1])
+learning_rate = 0.300001
+epochs = 200
+batch_size = 1028

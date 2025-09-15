@@ -26,12 +26,15 @@ func _ready() -> void:
 ##
 ## Threaded entry point for training and evaluation.
 ##
-func _run_training(userdata: Variant = null) -> void:
+func _run_training() -> void:
     var shader_runner: ShaderRunner = _create_shader_runner()
     var network: NeuralNetwork = _create_network(shader_runner)
     var split: DataSplit = _load_and_split_data()
+    print(split.train_targets.size())
+    print(split.train_targets.count(PackedFloat32Array([1.0])))
+    print(split.train_targets)
 
-    var trainer: Trainer = Trainer.new(network, shader_runner)
+    var trainer: Trainer = Trainer.new(network, shader_runner, Loss.Type.BCE)
     var training_time: int = _run_training_loop(trainer, split.train_inputs, split.train_targets)
 
     print("Training time: %d ms" % training_time)
@@ -51,7 +54,7 @@ func _create_shader_runner() -> ShaderRunner:
 ## Initializes the neural network with the configured layer sizes.
 ##
 func _create_network(shader_runner: ShaderRunner) -> NeuralNetwork:
-    return NeuralNetwork.new(layers, shader_runner)
+    return NeuralNetwork.new(layers, shader_runner, Activations.Type.TANH, Activations.Type.SIGMOID)
 
 ##
 ## Loads input and target data, applies slicing, and returns a train/test split.
