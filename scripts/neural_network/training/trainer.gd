@@ -21,6 +21,8 @@ var	lambda_l2: float
 var	epochs: int
 var	batch_size: int
 
+var lr_schedular: LRSchedular
+
 ## Constructs the trainer with a neural network and shader runner.
 ## @param network_ NeuralNetwork instance
 ## @param runner_ ShaderRunner instance
@@ -35,6 +37,7 @@ func _init(network_: NeuralNetwork, runner_: ShaderRunner, loss: Loss.Type,
 	runner = runner_
 	set_training_attributes(learning_rate_, lambda_l2_, epochs_, batch_size_)
 	set_loss_function(loss)
+	lr_schedular = LRSchedular.new(LRSchedular.Type.COSINE, epochs, 0.2)
 
 func set_training_attributes(
 	learning_rate_: float,
@@ -72,6 +75,7 @@ func train(
 ## @param batches Array of input/target batches
 ## @param learning_rate Learning rate for gradient descent
 func _train_epoch(epoch: int, batches: Array[Dictionary]) -> void:
+	learning_rate = lr_schedular.get_lr(epoch, learning_rate)
 	var epoch_loss: float = 0.0
 	for batch: Dictionary in batches:
 		var input_batch: Array[PackedFloat32Array] = batch["inputs"]
