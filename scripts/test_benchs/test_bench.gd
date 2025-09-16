@@ -28,14 +28,28 @@ func _ready() -> void:
         "res://scripts/neural_network/gpu/shaders/backward_pass.spv"
     )
 
-    var network: NeuralNetwork = NeuralNetwork.new(layers, shader_runner, Activations.Type.TANH, Activations.Type.TANH, NetworkLayer.WeightInitialization.XAVIER)
+    var network: NeuralNetwork = NeuralNetwork.new({
+        ConfigKeys.NETWORK.LAYER_SIZES: layers, 
+        ConfigKeys.NETWORK.RUNNER: shader_runner, 
+        ConfigKeys.NETWORK.HIDDEN_ACT: Activations.Type.TANH, 
+        ConfigKeys.NETWORK.OUTPUT_ACT: Activations.Type.TANH, 
+        ConfigKeys.NETWORK.WEIGHT_INIT: NetworkLayer.WeightInitialization.XAVIER
+    })
 
     var input_vectors: Array[PackedFloat32Array] = []
     var targets: Array[PackedFloat32Array] = []
 
     _generate_training_data(input_vectors, targets)
 
-    var trainer: Trainer = Trainer.new(network, shader_runner, Loss.Type.MSE, learning_rate, lambda_l2, epochs, batch_size)
+    var trainer: Trainer = Trainer.new({
+        ConfigKeys.TRAINER.NETWORK: network, 
+        ConfigKeys.TRAINER.RUNNER: shader_runner, 
+        ConfigKeys.TRAINER.LOSS: Loss.Type.MSE, 
+        ConfigKeys.TRAINER.LEARNING_RATE: learning_rate, 
+        ConfigKeys.TRAINER.LAMBDA_L2: lambda_l2, 
+        ConfigKeys.TRAINER.EPOCHS: epochs, 
+        ConfigKeys.TRAINER.BATCH_SIZE: batch_size
+    })
     var start_time: int = Time.get_ticks_msec()
     trainer.train(input_vectors, targets)
     var end_time: int = Time.get_ticks_msec()

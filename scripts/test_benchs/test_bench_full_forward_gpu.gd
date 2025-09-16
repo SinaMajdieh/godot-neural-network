@@ -15,13 +15,13 @@ func _ready() -> void:
     # Step 2: Define a small network architecture
     # Example: 2 inputs → 3 hidden → 1 output
     var layer_sizes: Array[int] = [2, 3, 1]
-    var network: NeuralNetwork = NeuralNetwork.new(
-        layer_sizes,
-        runner,
-        Activations.Type.TANH,
-        Activations.Type.TANH,
-        NetworkLayer.WeightInitialization.XAVIER
-    )
+    var network: NeuralNetwork = NeuralNetwork.new({
+        ConfigKeys.NETWORK.LAYER_SIZES: layer_sizes,
+        ConfigKeys.NETWORK.RUNNER: runner,
+        ConfigKeys.NETWORK.HIDDEN_ACT: Activations.Type.TANH,
+        ConfigKeys.NETWORK.OUTPUT_ACT: Activations.Type.TANH,
+        ConfigKeys.NETWORK.WEIGHT_INIT: NetworkLayer.WeightInitialization.XAVIER
+    })
 
     # Step 3: Create a small batch of input vectors
     var input_batch: Array[PackedFloat32Array] = [

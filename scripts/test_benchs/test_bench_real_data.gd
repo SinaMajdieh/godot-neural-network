@@ -35,7 +35,15 @@ func _run_training() -> void:
     print(split.train_targets.count(PackedFloat32Array([1.0])))
     print(split.train_targets)
 
-    var trainer: Trainer = Trainer.new(network, shader_runner, Loss.Type.BCE, learning_rate, lambda_l2, epochs, batch_size)
+    var trainer: Trainer = Trainer.new({
+        ConfigKeys.TRAINER.NETWORK: network, 
+        ConfigKeys.TRAINER.RUNNER: shader_runner, 
+        ConfigKeys.TRAINER.LOSS: Loss.Type.BCE, 
+        ConfigKeys.TRAINER.LEARNING_RATE: learning_rate, 
+        ConfigKeys.TRAINER.LAMBDA_L2: lambda_l2, 
+        ConfigKeys.TRAINER.EPOCHS: epochs, 
+        ConfigKeys.TRAINER.BATCH_SIZE: batch_size
+    })
     var training_time: int = _run_training_loop(trainer, split.train_inputs, split.train_targets)
 
     print("Training time: %d ms" % training_time)
@@ -55,7 +63,13 @@ func _create_shader_runner() -> ShaderRunner:
 ## Initializes the neural network with the configured layer sizes.
 ##
 func _create_network(shader_runner: ShaderRunner) -> NeuralNetwork:
-    return NeuralNetwork.new(layers, shader_runner, Activations.Type.TANH, Activations.Type.SIGMOID, NetworkLayer.WeightInitialization.XAVIER)
+    return NeuralNetwork.new({
+        ConfigKeys.NETWORK.LAYER_SIZES: layers, 
+        ConfigKeys.NETWORK.RUNNER: shader_runner, 
+        ConfigKeys.NETWORK.HIDDEN_ACT: Activations.Type.TANH, 
+        ConfigKeys.NETWORK.OUTPUT_ACT: Activations.Type.SIGMOID, 
+        ConfigKeys.NETWORK.WEIGHT_INIT: NetworkLayer.WeightInitialization.XAVIER
+    })
 
 ##
 ## Loads input and target data, applies slicing, and returns a train/test split.

@@ -137,7 +137,16 @@ func _run_training() -> void:
 	var network: NeuralNetwork = _create_network(runner)
 	var split: DataSplit = _load_and_split_data()
 
-	var trainer: Trainer = Trainer.new(network, runner, Loss.Type.BCE, learning_rate, lambda_l2, epochs, batch_size)
+	var trainer: Trainer = Trainer.new({
+		ConfigKeys.TRAINER.NETWORK: network, 
+		ConfigKeys.TRAINER.RUNNER: runner, 
+		ConfigKeys.TRAINER.LOSS: Loss.Type.BCE, 
+		ConfigKeys.TRAINER.LEARNING_RATE : learning_rate, 
+		ConfigKeys.TRAINER.LAMBDA_L2: lambda_l2, 
+		ConfigKeys.TRAINER.EPOCHS: epochs, 
+		ConfigKeys.TRAINER.BATCH_SIZE: batch_size
+	})
+	trainer.lr_schedular = LRSchedular.new(LRSchedular.Type.COSINE, epochs, 0.1)
 	var training_time: int = _run_training_loop(trainer, split.train_inputs, split.train_targets)
 
 	print("Training time: %d ms" % training_time)
@@ -153,7 +162,13 @@ func _create_shader_runner() -> ShaderRunner:
 
 ## Initializes the neural network with configured layer sizes and activations.
 func _create_network(shader_runner: ShaderRunner) -> NeuralNetwork:
-	return NeuralNetwork.new(layers, shader_runner, hidden_layers_activation, output_layer_activation, weight_initialization)
+	return NeuralNetwork.new({
+		ConfigKeys.NETWORK.LAYER_SIZES: layers, 
+		ConfigKeys.NETWORK.RUNNER: shader_runner, 
+		ConfigKeys.NETWORK.HIDDEN_ACT: hidden_layers_activation, 
+		ConfigKeys.NETWORK.OUTPUT_ACT: output_layer_activation, 
+		ConfigKeys.NETWORK.WEIGHT_INIT: weight_initialization
+	})
 
 ## Loads and splits image data into training and testing sets.
 func _load_and_split_data() -> DataSplit:
@@ -192,7 +207,7 @@ func _evaluate_model(
 		if binary_pred == int(target):
 			color = "[color=green]"
 			correct += 1
-		print_rich("%sTest case %3d : prediction-class [%5.3f]-[%1d] target [%1d]" % [color, i, pred, binary_pred, target])
+		#print_rich("%sTest case %3d : prediction-class [%5.3f]-[%1d] target [%1d]" % [color, i, pred, binary_pred, target])
 
 	var accuracy: float = float(correct) / float(predictions.size())
 	print_rich("[color=cyan]Test Accuracy: %4.2f" % accuracy)

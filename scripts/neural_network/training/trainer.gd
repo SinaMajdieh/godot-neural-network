@@ -4,6 +4,16 @@
 extends RefCounted
 class_name Trainer
 
+const KEYS = {
+    NETWORK       = "network",
+    RUNNER        = "runner",
+    LOSS          = "loss",
+    LEARNING_RATE = "learning_rate",
+    LAMBDA_L2     = "lambda_l2",
+    EPOCHS        = "epochs",
+    BATCH_SIZE    = "batch_size"
+}
+
 ## Signal emitted after each epoch with average loss.
 signal epoch_finished(loss: float)
 
@@ -24,20 +34,24 @@ var	batch_size: int
 var lr_schedular: LRSchedular
 
 ## Constructs the trainer with a neural network and shader runner.
-## @param network_ NeuralNetwork instance
-## @param runner_ ShaderRunner instance
-## @param loss Loss.Type enum specifying loss function
-func _init(network_: NeuralNetwork, runner_: ShaderRunner, loss: Loss.Type, 
-	learning_rate_: float,
-	lambda_l2_: float,
-	epochs_: int,
-	batch_size_: int,
-) -> void:
-	network = network_
-	runner = runner_
-	set_training_attributes(learning_rate_, lambda_l2_, epochs_, batch_size_)
-	set_loss_function(loss)
-	lr_schedular = LRSchedular.new(LRSchedular.Type.COSINE, epochs, 0.2)
+func _init(config: Dictionary) -> void:
+	var defaults: Dictionary = {
+		KEYS.NETWORK: null, 
+		KEYS.RUNNER: null, 
+		KEYS.LOSS: Loss.Type.BCE, 
+		KEYS.LEARNING_RATE: 0.1,
+		KEYS.LAMBDA_L2: 1e-4,
+		KEYS.EPOCHS: 50,
+		KEYS.BATCH_SIZE: 64,
+	}
+
+	config = defaults.merged(config, true)
+
+	network = config[KEYS.NETWORK]
+	runner = config[KEYS.RUNNER]
+	set_training_attributes(config[KEYS.LEARNING_RATE], config[KEYS.LAMBDA_L2], config[KEYS.EPOCHS], config[KEYS.BATCH_SIZE])
+	set_loss_function(config[KEYS.LOSS])
+	lr_schedular = LRSchedular.new(LRSchedular.Type.NONE)
 
 func set_training_attributes(
 	learning_rate_: float,
@@ -68,6 +82,7 @@ func train(
 	for epoch: int in range(epochs):
 		TensorUtils.shuffle_data(full_input, full_targets)
 		var batches: Array[Dictionary] = TensorUtils.create_batches(full_input, full_targets, batch_size)
+		learning_rate = lr_schedular.get_lr(epoch, learning_rate)
 		_train_epoch(epoch, batches)
 
 ## Trains the network for a single epoch.
@@ -75,7 +90,6 @@ func train(
 ## @param batches Array of input/target batches
 ## @param learning_rate Learning rate for gradient descent
 func _train_epoch(epoch: int, batches: Array[Dictionary]) -> void:
-	learning_rate = lr_schedular.get_lr(epoch, learning_rate)
 	var epoch_loss: float = 0.0
 	for batch: Dictionary in batches:
 		var input_batch: Array[PackedFloat32Array] = batch["inputs"]
