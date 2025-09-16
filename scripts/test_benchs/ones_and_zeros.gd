@@ -22,6 +22,7 @@ var training_thread: Thread
 
 @export_category("Training Properties")
 @export_range(0.000001, 10) var learning_rate: float = 0.6
+@export_range(0.000001, 0.01) var lambda_l2: float = 0.0001
 @export_range(1, 1000) var epochs: int = 400
 @export_range(1, 1_000_000) var batch_size: int = 1024
 @export_range(0.0, 1.0) var test_size: float = 0.2
@@ -136,7 +137,7 @@ func _run_training() -> void:
 	var network: NeuralNetwork = _create_network(runner)
 	var split: DataSplit = _load_and_split_data()
 
-	var trainer: Trainer = Trainer.new(network, runner, Loss.Type.BCE)
+	var trainer: Trainer = Trainer.new(network, runner, Loss.Type.BCE, learning_rate, lambda_l2, epochs, batch_size)
 	var training_time: int = _run_training_loop(trainer, split.train_inputs, split.train_targets)
 
 	print("Training time: %d ms" % training_time)
@@ -165,7 +166,7 @@ func _run_training_loop(
 	train_targets: Array[PackedFloat32Array]
 ) -> int:
 	var start_time: int = Time.get_ticks_msec()
-	trainer.train(train_inputs, train_targets, learning_rate, epochs, batch_size)
+	trainer.train(train_inputs, train_targets)
 	var end_time: int = Time.get_ticks_msec()
 	return end_time - start_time
 

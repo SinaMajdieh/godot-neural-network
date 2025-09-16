@@ -19,7 +19,8 @@ func _ready() -> void:
         layer_sizes,
         runner,
         Activations.Type.TANH,
-        Activations.Type.TANH
+        Activations.Type.TANH,
+        NetworkLayer.WeightInitialization.XAVIER
     )
 
     # Step 3: Create a small batch of input vectors

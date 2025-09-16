@@ -8,6 +8,7 @@ zeros_dir = "C:/Users/sinam/Desktop/test/0"
 ones_dir = "C:/Users/sinam/Desktop/test/1"
 layers = Array[int]([1024, 16, 8, 1])
 learning_rate = 0.100001
+lambda_l2 = 1e-06
 epochs = 200
 batch_size = 64
 weight_initialization = 0

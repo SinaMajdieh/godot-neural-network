@@ -15,14 +15,37 @@ var runner: ShaderRunner
 var error_function: Callable
 var loss_function: Callable
 
+# Training attributes
+var	learning_rate: float
+var	lambda_l2: float
+var	epochs: int
+var	batch_size: int
+
 ## Constructs the trainer with a neural network and shader runner.
 ## @param network_ NeuralNetwork instance
 ## @param runner_ ShaderRunner instance
 ## @param loss Loss.Type enum specifying loss function
-func _init(network_: NeuralNetwork, runner_: ShaderRunner, loss: Loss.Type) -> void:
+func _init(network_: NeuralNetwork, runner_: ShaderRunner, loss: Loss.Type, 
+	learning_rate_: float,
+	lambda_l2_: float,
+	epochs_: int,
+	batch_size_: int,
+) -> void:
 	network = network_
 	runner = runner_
+	set_training_attributes(learning_rate_, lambda_l2_, epochs_, batch_size_)
 	set_loss_function(loss)
+
+func set_training_attributes(
+	learning_rate_: float,
+	lambda_l2_: float,
+	epochs_: int,
+	batch_size_: int,
+) -> void:
+	learning_rate = learning_rate_
+	lambda_l2 = lambda_l2_
+	epochs = epochs_
+	batch_size = batch_size_
 
 ## Sets the loss and error functions based on selected loss type.
 func set_loss_function(loss: Loss.Type) -> void:
@@ -38,25 +61,22 @@ func set_loss_function(loss: Loss.Type) -> void:
 func train(
 	full_input: Array[PackedFloat32Array],
 	full_targets: Array[PackedFloat32Array],
-	learning_rate: float,
-	epochs: int,
-	batch_size: int
 ) -> void:
 	for epoch: int in range(epochs):
 		TensorUtils.shuffle_data(full_input, full_targets)
 		var batches: Array[Dictionary] = TensorUtils.create_batches(full_input, full_targets, batch_size)
-		_train_epoch(epoch, batches, learning_rate)
+		_train_epoch(epoch, batches)
 
 ## Trains the network for a single epoch.
 ## @param epoch Current epoch index
 ## @param batches Array of input/target batches
 ## @param learning_rate Learning rate for gradient descent
-func _train_epoch(epoch: int, batches: Array[Dictionary], learning_rate: float) -> void:
+func _train_epoch(epoch: int, batches: Array[Dictionary]) -> void:
 	var epoch_loss: float = 0.0
 	for batch: Dictionary in batches:
 		var input_batch: Array[PackedFloat32Array] = batch["inputs"]
 		var target_batch: Array[PackedFloat32Array] = batch["targets"]
-		var batch_loss: float = _train_batch(input_batch, target_batch, learning_rate)
+		var batch_loss: float = _train_batch(input_batch, target_batch)
 		epoch_loss += batch_loss
 	var avg_loss: float = epoch_loss / float(batches.size())
 	epoch_finished.emit(avg_loss)
@@ -70,7 +90,6 @@ func _train_epoch(epoch: int, batches: Array[Dictionary], learning_rate: float) 
 func _train_batch(
 	input_batch: Array[PackedFloat32Array],
 	target_batch: Array[PackedFloat32Array],
-	learning_rate: float
 ) -> float:
 	var predictions: PackedFloat32Array = network.forward_pass(input_batch)
 	var loss: float = compute_loss(predictions, target_batch)
@@ -101,6 +120,7 @@ func _train_batch(
 			gradients["weight"] as PackedFloat32Array,
 			gradients["bias"] as PackedFloat32Array,
 			learning_rate,
+			lambda_l2,
 			input_batch.size()
 		)
 
@@ -117,12 +137,12 @@ func _compute_gradients_for_layer(
 	errors: PackedFloat32Array,
 	prev_output: PackedFloat32Array,
 	layer: NetworkLayer,
-	batch_size: int
+	batch_size_: int
 ) -> Dictionary:
 	var grad_buffers: Array[RID] = runner.dispatch_backward(
 		activation, errors, prev_output, activation_type,
 		layer.input_size, layer.output_size,
-		batch_size
+		batch_size_
 	)
 
 	var weight_grad: PackedFloat32Array = TensorUtils.bytes_to_floats(runner.get_buffer_data(grad_buffers[0]))
@@ -177,12 +197,12 @@ func compute_output_errors(
 func _backpropagate_errors(
 	errors: Array[PackedFloat32Array],
 	layer: NetworkLayer,
-	batch_size: int
+	batch_size_: int
 ) -> Array[PackedFloat32Array]:
 	var weights: Array[Array] = layer.get_weight_matrix()
 	var new_errors: Array[PackedFloat32Array] = []
 
-	for i: int in range(batch_size):
+	for i: int in range(batch_size_):
 		var error_vector: PackedFloat32Array = PackedFloat32Array()
 		for j: int in range(layer.input_size):
 			var sum: float = 0.0

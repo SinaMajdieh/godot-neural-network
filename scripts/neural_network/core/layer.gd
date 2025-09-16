@@ -85,12 +85,14 @@ func update_parameters_with_gradients(
         weight_grads: PackedFloat32Array,
         bias_grads: PackedFloat32Array,
         lr: float,
+        lambda_l2 : float,
         batch_size: int
 ) -> void:
     var reshaped: Array[Array] = TensorUtils.reshape_weights(weight_grads, input_size, output_size)
     for i in range(output_size):
         for j in range(input_size):
             var grad: float = reshaped[i][j]
+            grad += lambda_l2 * weight_matrix[i][j] * 2.0 # l2 regulazation
             if TensorUtils.is_nan_or_exploding(grad, GRADIENT_EXPLOSION_THRESHOLD):
                 push_error("Exploding gradient in weight [%d][%d]" % [i, j])
                 grad = clamp(grad, -GRADIENT_THRESHOLD, GRADIENT_THRESHOLD)

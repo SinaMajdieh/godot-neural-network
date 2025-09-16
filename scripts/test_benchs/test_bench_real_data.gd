@@ -9,6 +9,7 @@ var input_size_ratio: float = 1.0
 
 @export_category("Training Properties")
 @export_range(0.000001, 10) var learning_rate: float = 0.001
+@export_range(0.000001, 0.01) var lambda_l2: float = 0.0001
 @export_range(1, 500) var epochs: int = 100
 @export_range(1, 10000) var batch_size: int = 20
 @export_range(0.1, 1.0) var test_size: float = 0.2
@@ -34,7 +35,7 @@ func _run_training() -> void:
     print(split.train_targets.count(PackedFloat32Array([1.0])))
     print(split.train_targets)
 
-    var trainer: Trainer = Trainer.new(network, shader_runner, Loss.Type.BCE)
+    var trainer: Trainer = Trainer.new(network, shader_runner, Loss.Type.BCE, learning_rate, lambda_l2, epochs, batch_size)
     var training_time: int = _run_training_loop(trainer, split.train_inputs, split.train_targets)
 
     print("Training time: %d ms" % training_time)
@@ -54,7 +55,7 @@ func _create_shader_runner() -> ShaderRunner:
 ## Initializes the neural network with the configured layer sizes.
 ##
 func _create_network(shader_runner: ShaderRunner) -> NeuralNetwork:
-    return NeuralNetwork.new(layers, shader_runner, Activations.Type.TANH, Activations.Type.SIGMOID)
+    return NeuralNetwork.new(layers, shader_runner, Activations.Type.TANH, Activations.Type.SIGMOID, NetworkLayer.WeightInitialization.XAVIER)
 
 ##
 ## Loads input and target data, applies slicing, and returns a train/test split.
@@ -84,7 +85,7 @@ func _run_training_loop(
     train_targets: Array[PackedFloat32Array]
 ) -> int:
     var start_time: int = Time.get_ticks_msec()
-    trainer.train(train_inputs, train_targets, learning_rate, epochs, batch_size)
+    trainer.train(train_inputs, train_targets)
     var end_time: int = Time.get_ticks_msec()
     return end_time - start_time
 

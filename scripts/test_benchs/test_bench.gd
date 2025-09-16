@@ -13,6 +13,7 @@ extends Node
 
 @export_category("Training Properties")
 @export var learning_rate: float = 0.1
+@export_range(0.000001, 0.01) var lambda_l2: float = 0.0001
 @export var epochs: int = 100
 @export var batch_size: int = 20
 @export_range(0.1, 1.0) var test_size: float = 0.2
@@ -27,16 +28,16 @@ func _ready() -> void:
         "res://scripts/neural_network/gpu/shaders/backward_pass.spv"
     )
 
-    var network: NeuralNetwork = NeuralNetwork.new(layers, shader_runner)
+    var network: NeuralNetwork = NeuralNetwork.new(layers, shader_runner, Activations.Type.TANH, Activations.Type.TANH, NetworkLayer.WeightInitialization.XAVIER)
 
     var input_vectors: Array[PackedFloat32Array] = []
     var targets: Array[PackedFloat32Array] = []
 
     _generate_training_data(input_vectors, targets)
 
-    var trainer: Trainer = Trainer.new(network, shader_runner)
+    var trainer: Trainer = Trainer.new(network, shader_runner, Loss.Type.MSE, learning_rate, lambda_l2, epochs, batch_size)
     var start_time: int = Time.get_ticks_msec()
-    trainer.train(input_vectors, targets, learning_rate, epochs, batch_size)
+    trainer.train(input_vectors, targets)
     var end_time: int = Time.get_ticks_msec()
 
     print("Training time: %d ms" % (end_time - start_time))
