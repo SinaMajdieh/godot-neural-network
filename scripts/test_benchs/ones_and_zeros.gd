@@ -25,6 +25,7 @@ var training_thread: Thread
 @export_range(1, 1000) var epochs: int = 400
 @export_range(1, 1_000_000) var batch_size: int = 1024
 @export_range(0.0, 1.0) var test_size: float = 0.2
+@export var weight_initialization : NetworkLayer.WeightInitialization = NetworkLayer.WeightInitialization.XAVIER
 @export var hidden_layers_activation: Activations.Type = Activations.Type.TANH
 @export var output_layer_activation: Activations.Type = Activations.Type.SIGMOID
 
@@ -151,7 +152,7 @@ func _create_shader_runner() -> ShaderRunner:
 
 ## Initializes the neural network with configured layer sizes and activations.
 func _create_network(shader_runner: ShaderRunner) -> NeuralNetwork:
-	return NeuralNetwork.new(layers, shader_runner, hidden_layers_activation, output_layer_activation)
+	return NeuralNetwork.new(layers, shader_runner, hidden_layers_activation, output_layer_activation, weight_initialization)
 
 ## Loads and splits image data into training and testing sets.
 func _load_and_split_data() -> DataSplit:

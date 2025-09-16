@@ -34,7 +34,7 @@ static func compute_mse_error(prediction: float, target: float) -> float:
 ## Computes Binary Cross Entropy loss between prediction and target.
 ## Clamps prediction to avoid log(0) instability.
 static func compute_bce(prediction: float, target: float) -> float:
-	#prediction = clamp(prediction, 0.0001, 0.9999)
+	prediction = clamp(prediction, 1e-7, 1 - 1e-7)
 	return -target * log(prediction) - (1.0 - target) * log(1.0 - prediction)
 
 ## Computes derivative of BCE with respect to prediction.

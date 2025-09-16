@@ -20,23 +20,25 @@ func _init(
         layer_sizes: Array[int],
         runner_: ShaderRunner,
         hidden_act: Activations.Type,
-        output_act: Activations.Type
+        output_act: Activations.Type,
+        weight_init_method: NetworkLayer.WeightInitialization
 ) -> void:
     runner = runner_
-    _initialize_layers(layer_sizes, hidden_act, output_act)
+    _initialize_layers(layer_sizes, hidden_act, output_act, weight_init_method)
 
 ## Creates and stores NetworkLayer instances based on the architecture.
 ## Assigns appropriate activation functions to each layer.
 func _initialize_layers(
         layer_sizes: Array[int],
         hidden_act: Activations.Type,
-        output_act: Activations.Type
+        output_act: Activations.Type,
+        weight_init_method: NetworkLayer.WeightInitialization
 ) -> void:
     var num_layers: int = layer_sizes.size() - 1
     for i: int in range(num_layers):
         var input_size: int = layer_sizes[i]
         var output_size: int = layer_sizes[i + 1]
-        var layer: NetworkLayer = NetworkLayer.new(input_size, output_size)
+        var layer: NetworkLayer = NetworkLayer.new(input_size, output_size, weight_init_method)
         layers.append(layer)
 
         var is_output_layer: bool = (i == num_layers - 1)

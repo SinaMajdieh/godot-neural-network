@@ -46,13 +46,13 @@ layout(std430, binding = 5) buffer MetaBuffer {
 // === Activation Functions ===
 //
 float activate_sigmoid(float x) {
-    //x = clamp(x, -20.0, 20.0);
+    x = clamp(x, -20.0, 20.0);
     x = 1.0 / (1.0 + exp(-x));
     return x;
 }
 
 float activate_tanh(float x) {
-    x = clamp(x, -10.0, 10.0);
+    x = clamp(x, -20.0, 20.0);
     float e_pos = exp(x);
     float e_neg = exp(-x);
     return (e_pos - e_neg) / (e_pos + e_neg);

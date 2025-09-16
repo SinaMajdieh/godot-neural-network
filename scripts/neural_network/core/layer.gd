@@ -16,21 +16,32 @@ var output_size: int
 var weight_matrix: Array[Array] = []  ## Shape: [output_size][input_size]
 var bias_vector: Array[float] = []    ## Shape: [output_size]
 
+# Weight Initialization
+enum WeightInitialization {
+    KAIMING, # for ReLU / Leaky Relu
+    XAVIER   # for Sigmoid / Tahn
+}
+
+static var weight_init_map: Dictionary[WeightInitialization, Callable] = {
+    WeightInitialization.KAIMING: func(fan_in: int) -> float: return sqrt(2.0 / fan_in),
+    WeightInitialization.XAVIER: func(fan_in: int) -> float: return sqrt(1.0 / fan_in),
+}
+
 ## Initializes the layer with given input/output sizes and randomized parameters.
-func _init(input_size_: int, output_size_: int) -> void:
+func _init(input_size_: int, output_size_: int, weight_init_method: WeightInitialization) -> void:
     input_size = input_size_
     output_size = output_size_
-    _initialize_parameters()
+    _initialize_parameters(weight_init_method)
 
 ## Initializes weights and biases using scaled uniform distribution.
-func _initialize_parameters() -> void:
-    weight_matrix = _generate_weight_matrix(input_size, output_size)
+func _initialize_parameters(weight_init_method: WeightInitialization) -> void:
+    weight_matrix = _generate_weight_matrix(input_size, output_size, weight_init_method)
     bias_vector = _generate_bias_vector(output_size)
 
 ## Generates a weight matrix of shape [output_size][input_size] with values in [-scale, scale].
-static func _generate_weight_matrix(in_size: int, out_size: int) -> Array[Array]:
+static func _generate_weight_matrix(in_size: int, out_size: int, weight_init_method: WeightInitialization) -> Array[Array]:
     var matrix: Array[Array] = []
-    var scale: float = sqrt(6.0 / (in_size + out_size))  ## Xavier-like scaling
+    var scale: float = weight_init_map[weight_init_method].call(in_size)
     for out_idx in range(out_size):
         var row: Array[float] = []
         for in_idx in range(in_size):
@@ -42,7 +53,7 @@ static func _generate_weight_matrix(in_size: int, out_size: int) -> Array[Array]
 static func _generate_bias_vector(out_size: int) -> Array[float]:
     var biases: Array[float] = []
     for _i in range(out_size):
-        biases.append(randf_range(-1.0, 1.0))
+        biases.append(randf_range(-0.1, 0.1))
     return biases
 
 ## Returns a flattened weight array suitable for GPU upload.
