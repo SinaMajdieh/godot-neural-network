@@ -76,6 +76,7 @@ float compute_derivative(float activated_value, uint act_type) {
     if (act_type == ACT_TANH)        return compute_tanh_derivative(activated_value);
     if (act_type == ACT_RELU)        return compute_relu_derivative(activated_value);
     if (act_type == ACT_LEAKY_RELU)  return compute_leaky_relu_derivative(activated_value);
+    if (act_type == ACT_SOFTMAX) return 1.0; // SoftMax + Cross Entropy Loss
     return 1.0; // Linear fallback
 }
 

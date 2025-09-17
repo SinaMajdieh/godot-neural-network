@@ -66,6 +66,32 @@ float activate_leaky_relu(float x) {
     return x > 0.0 ? x : 0.01 * x;
 }
 
+//
+// === Softmax for a single sample in one layer ===
+//
+void softmax_layer(uint sample_idx, uint out_size, uint out_off) {
+    // 1. Find max logit (to avoid overflow)
+    float max_val = -3.402823e38; // -FLT_MAX
+    for (uint i = 0u; i < out_size; ++i) {
+        float v = intermediates[out_off + sample_idx * out_size + i];
+        max_val = max(max_val, v);
+    }
+
+    // 2. Exponentiate shifted values & find sum
+    float sum_exp = 0.0;
+    for (uint i = 0u; i < out_size; ++i) {
+        float e = exp(intermediates[out_off + sample_idx * out_size + i] - max_val);
+        intermediates[out_off + sample_idx * out_size + i] = e;
+        sum_exp += e;
+    }
+
+    // 3. Normalize
+    float inv_sum = 1.0 / sum_exp;
+    for (uint i = 0u; i < out_size; ++i) {
+        intermediates[out_off + sample_idx * out_size + i] *= inv_sum;
+    }
+}
+
 float apply_activation(float x, uint layer_idx) {
     uint act_type = activation_types[layer_idx];
 
@@ -99,12 +125,11 @@ void main() {
     for (uint layer_idx = 0u; layer_idx < layer_count; ++layer_idx) {
         uint in_size  = input_sizes[layer_idx];
         uint out_size = output_sizes[layer_idx];
+        uint w_off = weight_offsets[layer_idx];
+        uint b_off = bias_offsets[layer_idx];
+        uint out_off_layer = interm_offsets[layer_idx];
 
         if (neuron_idx < out_size) {
-            uint w_off = weight_offsets[layer_idx];
-            uint b_off = bias_offsets[layer_idx];
-            uint out_off_layer = interm_offsets[layer_idx];
-
             float sum = biases[b_off + neuron_idx];
             for (uint i = 0u; i < in_size; ++i){
                 float in_val;
@@ -118,8 +143,23 @@ void main() {
                 sum += in_val * w_val;
             }
 
-            float activated = apply_activation(sum, layer_idx);
-            intermediates[out_off_layer + sample_idx * out_size + neuron_idx] = activated;
+            // for everything but softmax apply immediatly
+            if (activation_types[layer_idx] != ACT_SOFTMAX){
+                float activated = apply_activation(sum, layer_idx);
+                intermediates[out_off_layer + sample_idx * out_size + neuron_idx] = activated;
+            } else {
+                // Store raw logits for softmax later
+                intermediates[out_off_layer + sample_idx * out_size + neuron_idx] = sum;
+            }
+           
+        }
+
+        // === softmax stage ===
+        if (activation_types[layer_idx] == ACT_SOFTMAX) {
+            // let only one thread per sample handle normalization
+            if (neuron_idx == 0u) {
+                softmax_layer(sample_idx, out_size, out_off_layer);
+            }
         }
 
         neurons_first_layer = out_size;

@@ -6,10 +6,12 @@
 script = ExtResource("1_gk73b")
 zeros_dir = "C:/Users/sinam/Desktop/test/0"
 ones_dir = "C:/Users/sinam/Desktop/test/1"
-layers = Array[int]([1024, 16, 8, 1])
+twos_dir = "C:/Users/sinam/Desktop/test/2"
+layers = Array[int]([1024, 13, 3])
 learning_rate = 0.500001
 lambda_l2 = 1e-06
-epochs = 250
-batch_size = 512
-weight_initialization = 0
+loss = 2
+epochs = 150
+batch_size = 128
 hidden_layers_activation = 3
+output_layer_activation = 5

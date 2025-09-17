@@ -12,6 +12,7 @@ var training_thread: Thread
 @export_category("Test Bench Attributes")
 @export_global_dir var zeros_dir: String
 @export_global_dir var ones_dir: String
+@export_global_dir var twos_dir: String
 @export_range(0.1, 1.0) var image_scale: float = 0.25
 
 @export_category("Input")
@@ -22,7 +23,8 @@ var training_thread: Thread
 
 @export_category("Training Properties")
 @export_range(0.000001, 10) var learning_rate: float = 0.6
-@export_range(0.000001, 0.01) var lambda_l2: float = 0.0001
+@export_range(0.000001, 1) var lambda_l2: float = 0.0001
+@export var loss: Loss.Type = Loss.Type.BCE
 @export_range(1, 1000) var epochs: int = 400
 @export_range(1, 1_000_000) var batch_size: int = 1024
 @export_range(0.0, 1.0) var test_size: float = 0.2
@@ -45,8 +47,11 @@ func read_data() -> DataSplit:
 	var result: DataSplit = DataSplit.new()
 	var ones: Data = read_ones()
 	var zeros: Data = read_zeros()
+	var twos: Data = read_twos()
 
 	var usable_size: int = int((zeros.inputs.size() + ones.inputs.size()) * input_size_ratio / 2)
+	twos.inputs = twos.inputs.slice(0, usable_size)
+	twos.targets = twos.targets.slice(0, usable_size)
 	ones.inputs = ones.inputs.slice(0, usable_size)
 	ones.targets = ones.targets.slice(0, usable_size)
 	zeros.inputs = zeros.inputs.slice(0, usable_size)
@@ -54,17 +59,36 @@ func read_data() -> DataSplit:
 
 	var split_0: DataSplit = DataSetUtils.train_test_split(zeros.inputs, zeros.targets, test_size)
 	var split_1: DataSplit = DataSetUtils.train_test_split(ones.inputs, ones.targets, test_size)
+	var split_2: DataSplit = DataSetUtils.train_test_split(twos.inputs, twos.targets, test_size)
 
-	result.train_inputs.append_array(split_0.train_inputs)
-	result.train_inputs.append_array(split_1.train_inputs)
-	result.train_targets.append_array(split_0.train_targets)
-	result.train_targets.append_array(split_1.train_targets)
-	result.test_inputs.append_array(split_0.test_inputs)
-	result.test_inputs.append_array(split_1.test_inputs)
-	result.test_targets.append_array(split_0.test_targets)
-	result.test_targets.append_array(split_1.test_targets)
+
+	for i in range(split_0.train_inputs.size()):
+		result.train_inputs.append(split_0.train_inputs[i])
+		result.train_inputs.append(split_1.train_inputs[i])
+		result.train_inputs.append(split_2.train_inputs[i])
+		result.train_targets.append(split_0.train_targets[i])
+		result.train_targets.append(split_1.train_targets[i])
+		result.train_targets.append(split_2.train_targets[i])
+	for i in range(split_0.test_inputs.size()):
+		result.test_inputs.append(split_0.test_inputs[i])
+		result.test_inputs.append(split_1.test_inputs[i])
+		result.test_inputs.append(split_2.test_inputs[i])
+		result.test_targets.append(split_0.test_targets[i])
+		result.test_targets.append(split_1.test_targets[i])
+		result.test_targets.append(split_2.test_targets[i])
 
 	return result
+
+## Reads images labeled "2" and returns input/target pairs.
+func read_twos() -> Data:
+	var twos: Array[PackedFloat32Array] = []
+	var targets: Array[PackedFloat32Array] = []
+	var twos_path: PackedStringArray = list_files(twos_dir)
+	for path in twos_path:
+		twos.append(read_image(path))
+		targets.append(PackedFloat32Array([0.0, 0.0, 1.0]))
+	return Data.new(twos, targets)
+
 
 ## Reads images labeled "1" and returns input/target pairs.
 func read_ones() -> Data:
@@ -73,7 +97,7 @@ func read_ones() -> Data:
 	var ones_paths: PackedStringArray = list_files(ones_dir)
 	for path in ones_paths:
 		ones.append(read_image(path))
-		targets.append(PackedFloat32Array([1.0]))
+		targets.append(PackedFloat32Array([0.0, 1.0, 0.0]))
 	return Data.new(ones, targets)
 
 ## Reads images labeled "0" and returns input/target pairs.
@@ -83,7 +107,7 @@ func read_zeros() -> Data:
 	var zeros_paths: PackedStringArray = list_files(zeros_dir)
 	for path in zeros_paths:
 		zeros.append(read_image(path))
-		targets.append(PackedFloat32Array([0.0]))
+		targets.append(PackedFloat32Array([1.0, 0.0, 0.0]))
 	return Data.new(zeros, targets)
 
 ## Loads and preprocesses an image into a grayscale input vector.
@@ -140,17 +164,18 @@ func _run_training() -> void:
 	var trainer: Trainer = Trainer.new({
 		ConfigKeys.TRAINER.NETWORK: network, 
 		ConfigKeys.TRAINER.RUNNER: runner, 
-		ConfigKeys.TRAINER.LOSS: Loss.Type.BCE, 
+		ConfigKeys.TRAINER.LOSS: loss, 
 		ConfigKeys.TRAINER.LEARNING_RATE : learning_rate, 
 		ConfigKeys.TRAINER.LAMBDA_L2: lambda_l2, 
 		ConfigKeys.TRAINER.EPOCHS: epochs, 
 		ConfigKeys.TRAINER.BATCH_SIZE: batch_size
 	})
-	trainer.lr_schedular = LRSchedular.new(LRSchedular.Type.COSINE, epochs, 0.1)
+	#trainer.lr_schedular = LRSchedular.new(LRSchedular.Type.COSINE, epochs, 0.005)
 	var training_time: int = _run_training_loop(trainer, split.train_inputs, split.train_targets)
 
 	print("Training time: %d ms" % training_time)
-	_evaluate_model(network, split.test_inputs, split.test_targets)
+	_evaluate_model_soft_max(network, split.test_inputs, split.test_targets, true)
+	_evaluate_model_soft_max(network, split.train_inputs, split.train_targets)
 	call_deferred("_on_training_complete")
 
 ## Creates and returns a ShaderRunner instance.
@@ -211,3 +236,39 @@ func _evaluate_model(
 
 	var accuracy: float = float(correct) / float(predictions.size())
 	print_rich("[color=cyan]Test Accuracy: %4.2f" % accuracy)
+
+func _evaluate_model_soft_max(
+	network: NeuralNetwork,
+	inputs: Array[PackedFloat32Array],
+	targets: Array[PackedFloat32Array],
+	debug: bool = false
+) -> void:
+	var predictions_flat: PackedFloat32Array = network.forward_pass(inputs)
+	var predictions: Array[PackedFloat32Array] = TensorUtils.unflatten_batch(predictions_flat, 3)
+
+	var correct: int = 0
+	for i: int in range(predictions.size()):
+		var pred: PackedFloat32Array = predictions[i]
+		var target: PackedFloat32Array = targets[i]
+		var idx: int = find_max(pred)
+		#print(pred, " ", target)
+		var color: String = "[color=red]"
+		if target[idx] == 1:
+			color = "[color=green]"
+			correct += 1
+		else:
+			#pass
+			if debug:
+				print("Test case ", i , " prediction ", pred, " target " , target)
+
+	var accuracy: float = float(correct) / float(predictions.size())
+	print_rich("[color=cyan]Test Accuracy: %4.2f" % accuracy)
+
+func find_max(arr: PackedFloat32Array) -> int:
+	var max: float = 0.0
+	var max_idx:int = -1
+	for i in range(arr.size()):
+		if arr[i] > max:
+			max = arr[i]
+			max_idx = i
+	return max_idx

@@ -24,7 +24,7 @@ enum WeightInitialization {
 
 static var weight_init_map: Dictionary[WeightInitialization, Callable] = {
     WeightInitialization.KAIMING: func(fan_in: int) -> float: return sqrt(2.0 / fan_in),
-    WeightInitialization.XAVIER: func(fan_in: int) -> float: return sqrt(1.0 / fan_in),
+    WeightInitialization.XAVIER: func(fan_in: int) -> float: return sqrt(6.0 / fan_in),
 }
 
 ## Initializes the layer with given input/output sizes and randomized parameters.
