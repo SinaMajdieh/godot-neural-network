@@ -26,7 +26,7 @@ var cached_layer_outputs: Array[PackedFloat32Array] = []     ## Cached outputs f
 ## @param output_act Activation type for output layer
 func _init(config: Dictionary) -> void:
 	var defaults: Dictionary = {
-		KEYS.LAYER_SIZES: [],
+		KEYS.LAYER_SIZES: [] as Array[int],
 		KEYS.RUNNER: null,
 		KEYS.HIDDEN_ACT: Activations.Type.RELU,
 		KEYS.OUTPUT_ACT: Activations.Type.SIGMOID,

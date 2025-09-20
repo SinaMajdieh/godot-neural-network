@@ -28,7 +28,7 @@ static var weight_init_map: Dictionary[WeightInitialization, Callable] = {
 }
 
 ## Initializes the layer with given input/output sizes and randomized parameters.
-func _init(input_size_: int, output_size_: int, weight_init_method: WeightInitialization) -> void:
+func _init(input_size_: int, output_size_: int, weight_init_method: WeightInitialization = WeightInitialization.XAVIER) -> void:
     input_size = input_size_
     output_size = output_size_
     _initialize_parameters(weight_init_method)
@@ -42,9 +42,9 @@ func _initialize_parameters(weight_init_method: WeightInitialization) -> void:
 static func _generate_weight_matrix(in_size: int, out_size: int, weight_init_method: WeightInitialization) -> Array[Array]:
     var matrix: Array[Array] = []
     var scale: float = weight_init_map[weight_init_method].call(in_size)
-    for out_idx in range(out_size):
+    for out_idx: int in range(out_size):
         var row: Array[float] = []
-        for in_idx in range(in_size):
+        for in_idx: int in range(in_size):
             row.append(randf_range(-scale, scale))
         matrix.append(row)
     return matrix
@@ -52,14 +52,14 @@ static func _generate_weight_matrix(in_size: int, out_size: int, weight_init_met
 ## Generates a bias vector of shape [output_size] with values in [-1, 1].
 static func _generate_bias_vector(out_size: int) -> Array[float]:
     var biases: Array[float] = []
-    for _i in range(out_size):
+    for _i: int in range(out_size):
         biases.append(randf_range(-0.1, 0.1))
     return biases
 
 ## Returns a flattened weight array suitable for GPU upload.
 func get_flat_weights() -> Array[float]:
     var flat: Array[float] = []
-    for row in weight_matrix:
+    for row: Array in weight_matrix:
         flat.append_array(row)
     return flat
 
@@ -89,8 +89,8 @@ func update_parameters_with_gradients(
         batch_size: int
 ) -> void:
     var reshaped: Array[Array] = TensorUtils.reshape_weights(weight_grads, input_size, output_size)
-    for i in range(output_size):
-        for j in range(input_size):
+    for i: int in range(output_size):
+        for j: int in range(input_size):
             var grad: float = reshaped[i][j]
             grad += lambda_l2 * weight_matrix[i][j] * 2.0 # l2 regulazation
             if TensorUtils.is_nan_or_exploding(grad, GRADIENT_EXPLOSION_THRESHOLD):

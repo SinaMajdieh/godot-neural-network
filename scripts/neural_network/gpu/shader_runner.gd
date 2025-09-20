@@ -34,7 +34,7 @@ func _load_shader(path: String) -> RID:
 ##
 ## Creates a GPU buffer from a float array.
 ##
-func create_buffer(data) -> RID:
+func create_buffer(data: Variant) -> RID:
     var byte_data: PackedByteArray = data.to_byte_array()
     return rd.storage_buffer_create(byte_data.size(), byte_data)
 
