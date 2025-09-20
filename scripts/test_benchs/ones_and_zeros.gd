@@ -1,25 +1,22 @@
-## TrainingBench.gd
-## Node-based test bench for training and evaluating a GPU-accelerated neural network.
-## Loads image data, initializes network, runs training loop, and prints evaluation metrics.
+# TrainingBench.gd
+# Node-based test bench for GPU-accelerated neural network training.
+# Why: Quick iteration and evaluation without modular overhead.
 
 extends Node
 
-## Thread for asynchronous training.
+# Thread for asynchronous training.
 var training_thread: Thread
-
-## === Exported Parameters ===
 
 @export_category("Test Bench Attributes")
 @export_global_dir var zeros_dir: String
 @export_global_dir var ones_dir: String
-@export_global_dir var twos_dir: String
 @export_range(0.1, 1.0) var image_scale: float = 0.25
 
 @export_category("Input")
 @export_range(0.0, 1.0) var input_size_ratio: float = 1.0
 
 @export_category("Network Properties")
-@export var layers: Array[int] = [32 * 32, 32, 16, 1]
+@export var layer_sizes: Array[int] = [32 * 32, 32, 16, 1]
 
 @export_category("Training Properties")
 @export_range(0.000001, 10) var learning_rate: float = 0.6
@@ -27,248 +24,152 @@ var training_thread: Thread
 @export var loss: Loss.Type = Loss.Type.BCE
 @export_range(1, 1000) var epochs: int = 400
 @export_range(1, 1_000_000) var batch_size: int = 1024
-@export_range(0.0, 1.0) var test_size: float = 0.2
-@export var weight_initialization : NetworkLayer.WeightInitialization = NetworkLayer.WeightInitialization.XAVIER
-@export var hidden_layers_activation: Activations.Type = Activations.Type.TANH
-@export var output_layer_activation: Activations.Type = Activations.Type.SIGMOID
+@export_range(0.0, 1.0) var test_size_ratio: float = 0.2
+@export var weight_initialization: NetworkLayer.WeightInitialization = \
+	NetworkLayer.WeightInitialization.XAVIER
+@export var hidden_layers_activation: Activations.Type = \
+	Activations.Type.TANH
+@export var output_layer_activation: Activations.Type = \
+	Activations.Type.SIGMOID
 
-## === Internal Data Class ===
-
+# Holds paired input/target arrays for each label.
 class Data:
 	var inputs: Array[PackedFloat32Array]
 	var targets: Array[PackedFloat32Array]
 
-	func _init(inputs_: Array[PackedFloat32Array], targets_: Array[PackedFloat32Array]) -> void:
+	func _init(
+		inputs_: Array[PackedFloat32Array],
+		targets_: Array[PackedFloat32Array]
+	) -> void:
 		inputs = inputs_
 		targets = targets_
 
-## Reads and combines ones/zeros image data, applies slicing and splitting.
+# Loads and merges zero/one datasets into a single DataSplit.
 func read_data() -> DataSplit:
 	var result: DataSplit = DataSplit.new()
-	var ones: Data = read_ones()
-	var zeros: Data = read_zeros()
-	var twos: Data = read_twos()
+	var ones: Data = read_label(
+		ones_dir, PackedFloat32Array([0, 1, 0, 0])
+	)
+	var zeros: Data = read_label(
+		zeros_dir, PackedFloat32Array([1, 0, 0, 0])
+	)
 
-	var usable_size: int = int((zeros.inputs.size() + ones.inputs.size()) * input_size_ratio / 2)
-	twos.inputs = twos.inputs.slice(0, usable_size)
-	twos.targets = twos.targets.slice(0, usable_size)
+	var usable_size: int = int(
+		(zeros.inputs.size() + ones.inputs.size()) *
+		input_size_ratio / 2
+	)
 	ones.inputs = ones.inputs.slice(0, usable_size)
 	ones.targets = ones.targets.slice(0, usable_size)
 	zeros.inputs = zeros.inputs.slice(0, usable_size)
 	zeros.targets = zeros.targets.slice(0, usable_size)
 
-	var split_0: DataSplit = DataSetUtils.train_test_split(zeros.inputs, zeros.targets, test_size)
-	var split_1: DataSplit = DataSetUtils.train_test_split(ones.inputs, ones.targets, test_size)
-	var split_2: DataSplit = DataSetUtils.train_test_split(twos.inputs, twos.targets, test_size)
+	var split0: DataSplit = DataSetUtils.train_test_split(
+		zeros.inputs, zeros.targets, test_size_ratio
+	)
+	var split1: DataSplit = DataSetUtils.train_test_split(
+		ones.inputs, ones.targets, test_size_ratio
+	)
 
-
-	for i in range(split_0.train_inputs.size()):
-		result.train_inputs.append(split_0.train_inputs[i])
-		result.train_inputs.append(split_1.train_inputs[i])
-		result.train_inputs.append(split_2.train_inputs[i])
-		result.train_targets.append(split_0.train_targets[i])
-		result.train_targets.append(split_1.train_targets[i])
-		result.train_targets.append(split_2.train_targets[i])
-	for i in range(split_0.test_inputs.size()):
-		result.test_inputs.append(split_0.test_inputs[i])
-		result.test_inputs.append(split_1.test_inputs[i])
-		result.test_inputs.append(split_2.test_inputs[i])
-		result.test_targets.append(split_0.test_targets[i])
-		result.test_targets.append(split_1.test_targets[i])
-		result.test_targets.append(split_2.test_targets[i])
+	_append_split(result.train_inputs, split0.train_inputs, split1.train_inputs)
+	_append_split(result.train_targets, split0.train_targets, split1.train_targets)
+	_append_split(result.test_inputs, split0.test_inputs, split1.test_inputs)
+	_append_split(result.test_targets, split0.test_targets, split1.test_targets)
 
 	return result
 
-## Reads images labeled "2" and returns input/target pairs.
-func read_twos() -> Data:
-	var twos: Array[PackedFloat32Array] = []
+# Reads images for a given label and applies a fixed target vector.
+func read_label(
+	dir: String,
+	target_vec: PackedFloat32Array
+) -> Data:
+	var imgs: Array[PackedFloat32Array] = []
 	var targets: Array[PackedFloat32Array] = []
-	var twos_path: PackedStringArray = list_files(twos_dir)
-	for path in twos_path:
-		twos.append(read_image(path))
-		targets.append(PackedFloat32Array([0.0, 0.0, 1.0]))
-	return Data.new(twos, targets)
+	for path: String in FileUtils.list_files(dir):
+		imgs.append(ImageUtils.read_image(path, image_scale))
+		targets.append(target_vec)
+	return Data.new(imgs, targets)
 
+# Helper: merges category data into a single set.
+func _append_split(
+	dest: Array,
+	s0: Array,
+	s1: Array
+) -> void:
+	for i: int in range(s0.size()):
+		dest.append(s0[i])
+		dest.append(s1[i])
 
-## Reads images labeled "1" and returns input/target pairs.
-func read_ones() -> Data:
-	var ones: Array[PackedFloat32Array] = []
-	var targets: Array[PackedFloat32Array] = []
-	var ones_paths: PackedStringArray = list_files(ones_dir)
-	for path in ones_paths:
-		ones.append(read_image(path))
-		targets.append(PackedFloat32Array([0.0, 1.0, 0.0]))
-	return Data.new(ones, targets)
-
-## Reads images labeled "0" and returns input/target pairs.
-func read_zeros() -> Data:
-	var zeros: Array[PackedFloat32Array] = []
-	var targets: Array[PackedFloat32Array] = []
-	var zeros_paths: PackedStringArray = list_files(zeros_dir)
-	for path in zeros_paths:
-		zeros.append(read_image(path))
-		targets.append(PackedFloat32Array([1.0, 0.0, 0.0]))
-	return Data.new(zeros, targets)
-
-## Loads and preprocesses an image into a grayscale input vector.
-func read_image(path: String) -> PackedFloat32Array:
-	var result: PackedFloat32Array = PackedFloat32Array()
-	var image: Image = Image.new()
-	var error: int = image.load(path)
-
-	if error != OK:
-		push_error("Failed to load image: %s" % path)
-		return result
-
-	var width: int = int(image.get_width() * image_scale)
-	var height: int = int(image.get_height() * image_scale)
-	image.resize(width, height, Image.INTERPOLATE_LANCZOS)
-
-	for y in range(height):
-		for x in range(width):
-			var color: Color = image.get_pixel(x, y)
-			var value: float = color.r * 0.299 + color.g * 0.587 + color.b * 0.114
-			if value > 0.95:
-				value = 0.5
-			result.append(clamp((value - 0.5) * 2.0, 0.0, 1.0))
-	return result
-
-## Lists all non-directory files in the given path.
-func list_files(path: String) -> PackedStringArray:
-	var list: PackedStringArray = PackedStringArray()
-	var dir: DirAccess = DirAccess.open(path)
-	if dir == null:
-		push_error("Failed to open directory: %s" % path)
-		return list
-
-	dir.list_dir_begin()
-	var file_name: String = dir.get_next()
-	while file_name != "":
-		if not dir.current_is_dir():
-			list.append(path + "/" + file_name)
-		file_name = dir.get_next()
-	dir.list_dir_end()
-	return list
-
-## Entry point: starts training in a separate thread.
-func _ready() -> void:
-	training_thread = Thread.new()
-	training_thread.start(_run_training)
-
-## Main training routine.
+# Main training entry point.
 func _run_training() -> void:
 	var runner: ShaderRunner = _create_shader_runner()
 	var network: NeuralNetwork = _create_network(runner)
-	var split: DataSplit = _load_and_split_data()
+	var split: DataSplit = read_data()
 
 	var trainer: Trainer = Trainer.new({
-		ConfigKeys.TRAINER.NETWORK: network, 
-		ConfigKeys.TRAINER.RUNNER: runner, 
-		ConfigKeys.TRAINER.LOSS: loss, 
-		ConfigKeys.TRAINER.LEARNING_RATE : learning_rate, 
-		ConfigKeys.TRAINER.LAMBDA_L2: lambda_l2, 
-		ConfigKeys.TRAINER.EPOCHS: epochs, 
+		ConfigKeys.TRAINER.NETWORK: network,
+		ConfigKeys.TRAINER.RUNNER: runner,
+		ConfigKeys.TRAINER.LOSS: loss,
+		ConfigKeys.TRAINER.LEARNING_RATE: learning_rate,
+		ConfigKeys.TRAINER.LAMBDA_L2: lambda_l2,
+		ConfigKeys.TRAINER.EPOCHS: epochs,
 		ConfigKeys.TRAINER.BATCH_SIZE: batch_size
 	})
-	#trainer.lr_schedular = LRSchedular.new(LRSchedular.Type.COSINE, epochs, 0.005)
-	var training_time: int = _run_training_loop(trainer, split.train_inputs, split.train_targets)
+	trainer.lr_schedular = LRSchedular.new(
+		LRSchedular.Type.COSINE, epochs, 0.005
+	)
 
-	print("Training time: %d ms" % training_time)
-	_evaluate_model_soft_max(network, split.test_inputs, split.test_targets, true)
-	_evaluate_model_soft_max(network, split.train_inputs, split.train_targets)
+	var satisfied: bool = false
+	while not satisfied:
+		var time_ms: int = _train_once(
+			trainer, split.train_inputs, split.train_targets
+		)
+		print("Training time: %d ms" % time_ms)
+
+		var test_acc: float = ModelEvaluator.evaluate_model_soft_max(
+			network, split.test_inputs, split.test_targets, true
+		)
+		print_rich("[color=cyan]Test Accuracy: %4.2f" % test_acc)
+
+		if test_acc >= 0.9:
+			satisfied = true
+
+		var train_acc: float = ModelEvaluator.evaluate_model_soft_max(
+			network, split.train_inputs, split.train_targets
+		)
+		print_rich("[color=cyan]Training Accuracy: %4.2f" % train_acc)
+
+	NeuralNetworkSerializer.export(
+		network, "0_and_1_digit_recognition.tres"
+	)
 	call_deferred("_on_training_complete")
 
-## Creates and returns a ShaderRunner instance.
+# Runs one training cycle and returns elapsed time in ms.
+func _train_once(
+	trainer: Trainer,
+	tr_inputs: Array[PackedFloat32Array],
+	tr_targets: Array[PackedFloat32Array]
+) -> int:
+	var start_ms: int = Time.get_ticks_msec()
+	trainer.train(tr_inputs, tr_targets)
+	return Time.get_ticks_msec() - start_ms
+
+# Creates the GPU shader runner.
 func _create_shader_runner() -> ShaderRunner:
 	return ShaderRunner.new(
 		"res://scripts/neural_network/gpu/shaders/forward_pass.spv",
 		"res://scripts/neural_network/gpu/shaders/backward_pass.spv"
 	)
 
-## Initializes the neural network with configured layer sizes and activations.
-func _create_network(shader_runner: ShaderRunner) -> NeuralNetwork:
+# Creates the neural network based on current parameters.
+func _create_network(runner: ShaderRunner) -> NeuralNetwork:
 	return NeuralNetwork.new({
-		ConfigKeys.NETWORK.LAYER_SIZES: layers, 
-		ConfigKeys.NETWORK.RUNNER: shader_runner, 
-		ConfigKeys.NETWORK.HIDDEN_ACT: hidden_layers_activation, 
-		ConfigKeys.NETWORK.OUTPUT_ACT: output_layer_activation, 
+		ConfigKeys.NETWORK.LAYER_SIZES: layer_sizes,
+		ConfigKeys.NETWORK.RUNNER: runner,
+		ConfigKeys.NETWORK.HIDDEN_ACT: hidden_layers_activation,
+		ConfigKeys.NETWORK.OUTPUT_ACT: output_layer_activation,
 		ConfigKeys.NETWORK.WEIGHT_INIT: weight_initialization
 	})
 
-## Loads and splits image data into training and testing sets.
-func _load_and_split_data() -> DataSplit:
-	return read_data()
-
-## Runs the training loop and returns elapsed time in milliseconds.
-func _run_training_loop(
-	trainer: Trainer,
-	train_inputs: Array[PackedFloat32Array],
-	train_targets: Array[PackedFloat32Array]
-) -> int:
-	var start_time: int = Time.get_ticks_msec()
-	trainer.train(train_inputs, train_targets)
-	var end_time: int = Time.get_ticks_msec()
-	return end_time - start_time
-
-## Called after training completes to clean up the training thread.
+# Cleans up the thread after training is done.
 func _on_training_complete() -> void:
 	training_thread.wait_to_finish()
-
-## Evaluates model accuracy on test data and prints results.
-func _evaluate_model(
-	network: NeuralNetwork,
-	inputs: Array[PackedFloat32Array],
-	targets: Array[PackedFloat32Array]
-) -> void:
-	var predictions_flat: PackedFloat32Array = network.forward_pass(inputs)
-	var predictions: Array[PackedFloat32Array] = TensorUtils.unflatten_batch(predictions_flat, 1)
-
-	var correct: int = 0
-	for i: int in range(predictions.size()):
-		var pred: float = predictions[i][0]
-		var target: float = targets[i][0]
-		var binary_pred: int = int(pred >= 0.5)
-		var color: String = "[color=red]"
-		if binary_pred == int(target):
-			color = "[color=green]"
-			correct += 1
-		#print_rich("%sTest case %3d : prediction-class [%5.3f]-[%1d] target [%1d]" % [color, i, pred, binary_pred, target])
-
-	var accuracy: float = float(correct) / float(predictions.size())
-	print_rich("[color=cyan]Test Accuracy: %4.2f" % accuracy)
-
-func _evaluate_model_soft_max(
-	network: NeuralNetwork,
-	inputs: Array[PackedFloat32Array],
-	targets: Array[PackedFloat32Array],
-	debug: bool = false
-) -> void:
-	var predictions_flat: PackedFloat32Array = network.forward_pass(inputs)
-	var predictions: Array[PackedFloat32Array] = TensorUtils.unflatten_batch(predictions_flat, 3)
-
-	var correct: int = 0
-	for i: int in range(predictions.size()):
-		var pred: PackedFloat32Array = predictions[i]
-		var target: PackedFloat32Array = targets[i]
-		var idx: int = find_max(pred)
-		#print(pred, " ", target)
-		var color: String = "[color=red]"
-		if target[idx] == 1:
-			color = "[color=green]"
-			correct += 1
-		else:
-			#pass
-			if debug:
-				print("Test case ", i , " prediction ", pred, " target " , target)
-
-	var accuracy: float = float(correct) / float(predictions.size())
-	print_rich("[color=cyan]Test Accuracy: %4.2f" % accuracy)
-
-func find_max(arr: PackedFloat32Array) -> int:
-	var max: float = 0.0
-	var max_idx:int = -1
-	for i in range(arr.size()):
-		if arr[i] > max:
-			max = arr[i]
-			max_idx = i
-	return max_idx
