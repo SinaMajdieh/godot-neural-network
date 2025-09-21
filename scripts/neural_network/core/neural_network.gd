@@ -5,7 +5,7 @@
 extends RefCounted
 class_name NeuralNetwork
 
-const KEYS = {
+const KEYS: Dictionary = {
 	LAYER_SIZES    = "layer_sizes",
 	RUNNER         = "runner",
 	HIDDEN_ACT     = "hidden_act",
@@ -16,12 +16,12 @@ const KEYS = {
 ## Network architecture and execution context.
 var layers: Array[NetworkLayer] = []                         ## Ordered list of network layers
 var layers_activation: Array[Activations.Type] = []          ## Activation type per layer
-var runner: ShaderRunner                                     ## GPU shader runner
+var runner: ForwardPassRunner                                     ## GPU shader runner
 var cached_layer_outputs: Array[PackedFloat32Array] = []     ## Cached outputs from each layer
 
 ## Constructs the network using the given layer sizes and GPU shader runner.
 ## @param layer_sizes List of neuron counts per layer
-## @param runner_ ShaderRunner instance for GPU dispatch
+## @param runner_ ForwardPassRunner instance for GPU dispatch
 ## @param hidden_act Activation type for hidden layers
 ## @param output_act Activation type for output layer
 func _init(config: Dictionary) -> void:

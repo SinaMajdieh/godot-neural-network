@@ -1,6 +1,6 @@
 [gd_scene load_steps=2 format=3 uid="uid://dlct0q7vrdv5q"]
 
-[ext_resource type="Script" uid="uid://cchyry8hqlyyv" path="res://scripts/test_benchs/import_network.gd" id="1_7xuo3"]
+[ext_resource type="Script" uid="uid://d3o04bo2ewdcc" path="res://scripts/test_benchs/neural_network/import_network.gd" id="1_7xuo3"]
 
 [node name="ImportNetwork" type="Control"]
 layout_mode = 3
@@ -11,8 +11,8 @@ grow_horizontal = 2
 grow_vertical = 2
 script = ExtResource("1_7xuo3")
 network_path = "C:/Users/sinam/Documents/coding stuff/Godot projects/neural-network/0-4_digit_recognition.tres"
-test_image = "C:/Users/sinam/Desktop/test/go/5/img006-00795.png"
-target = 5
+test_image = "C:/Users/sinam/Desktop/test/go/2/img003-00171.png"
+target = 2
 
 [node name="TextureRect" type="TextureRect" parent="."]
 layout_mode = 1

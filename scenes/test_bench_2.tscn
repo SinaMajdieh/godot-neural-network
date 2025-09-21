@@ -1,6 +1,0 @@
-[gd_scene load_steps=2 format=3 uid="uid://ck45ur6tp3tet"]
-
-[ext_resource type="Script" uid="uid://db1sfy1kah7rc" path="res://scripts/test_benchs/test_bench_full_forward_gpu.gd" id="1_4xgde"]
-
-[node name="TestBench2" type="Node"]
-script = ExtResource("1_4xgde")

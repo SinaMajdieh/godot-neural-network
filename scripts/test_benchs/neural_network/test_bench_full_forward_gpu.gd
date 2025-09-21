@@ -9,16 +9,13 @@ extends Node
 # Purpose: Initialize network, run a forward pass, display output.
 func _ready() -> void:
 	# Step 1: Create the shader runner for forward and backward passes.
-	var runner: ShaderRunner = ShaderRunner.new(
-		"res://scripts/neural_network/gpu/shaders/forward_pass.spv",
-		"res://scripts/neural_network/gpu/shaders/backward_pass.spv"
-	)
-
+	var forward_runner: ForwardPassRunner = ForwardPassRunner.new(ConfigKeys.SHADERS_PATHS.FORWARD_PASS)
+	
 	# Step 2: Define a small network architecture (2→3→1).
 	var layer_sizes: Array[int] = [2, 3, 1]
 	var network: NeuralNetwork = NeuralNetwork.new({
 		ConfigKeys.NETWORK.LAYER_SIZES: layer_sizes,
-		ConfigKeys.NETWORK.RUNNER: runner,
+		ConfigKeys.NETWORK.RUNNER: forward_runner,
 		ConfigKeys.NETWORK.HIDDEN_ACT: Activations.Type.TANH,
 		ConfigKeys.NETWORK.OUTPUT_ACT: Activations.Type.TANH,
 		ConfigKeys.NETWORK.WEIGHT_INIT: 

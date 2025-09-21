@@ -80,8 +80,9 @@ func show_input_as_image(data: PackedFloat32Array) -> void:
 
 # Main training routine, executed in a background thread.
 func _run_training() -> void:
-	var runner: ShaderRunner = _create_shader_runner()
-	var network: NeuralNetwork = _create_network(runner)
+	var forward_runner: ForwardPassRunner = ForwardPassRunner.new(ConfigKeys.SHADERS_PATHS.FORWARD_PASS)
+	var backward_runner: BackwardPassRunner = BackwardPassRunner.new(ConfigKeys.SHADERS_PATHS.BACKWARD_PASS)
+	var network: NeuralNetwork = _create_network(forward_runner)
 	var split: DataSplit = DataSetUtils.train_test_split(
 		training_inputs,
 		training_targets,
@@ -90,9 +91,9 @@ func _run_training() -> void:
 
 	var trainer: Trainer = Trainer.new({
 		ConfigKeys.TRAINER.NETWORK: network,
-		ConfigKeys.TRAINER.RUNNER: runner,
+		ConfigKeys.TRAINER.RUNNER: forward_runner,
 		ConfigKeys.TRAINER.LOSS: loss,
-		ConfigKeys.TRAINER.LEARNING_RATE: learning_rate,
+		ConfigKeys.TRAINER.LEARNING_RATE: backward_runner,
 		ConfigKeys.TRAINER.LAMBDA_L2: lambda_l2,
 		ConfigKeys.TRAINER.EPOCHS: epochs,
 		ConfigKeys.TRAINER.BATCH_SIZE: batch_size
@@ -132,17 +133,8 @@ func _run_training() -> void:
 
 	call_deferred("_on_training_complete")
 
-
-# Creates a ShaderRunner instance configured with SPIR-V shader paths.
-func _create_shader_runner() -> ShaderRunner:
-	return ShaderRunner.new(
-		"res://scripts/neural_network/gpu/shaders/forward_pass.spv",
-		"res://scripts/neural_network/gpu/shaders/backward_pass.spv"
-	)
-
-
 # Initializes the neural network with set layers and activations.
-func _create_network(shader_runner: ShaderRunner) -> NeuralNetwork:
+func _create_network(shader_runner: ForwardPassRunner) -> NeuralNetwork:
 	return NeuralNetwork.new({
 		ConfigKeys.NETWORK.LAYER_SIZES: layer_sizes,
 		ConfigKeys.NETWORK.RUNNER: shader_runner,

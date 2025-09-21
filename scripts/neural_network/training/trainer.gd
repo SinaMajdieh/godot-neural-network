@@ -4,7 +4,7 @@
 extends RefCounted
 class_name Trainer
 
-const KEYS = {
+const KEYS: Dictionary = {
     NETWORK       = "network",
     RUNNER        = "runner",
     LOSS          = "loss",
@@ -19,7 +19,7 @@ signal epoch_finished(loss: float)
 
 ## Training context.
 var network: NeuralNetwork
-var runner: ShaderRunner
+var runner: BackwardPassRunner
 
 ## Loss and error function dispatchers.
 var error_function: Callable

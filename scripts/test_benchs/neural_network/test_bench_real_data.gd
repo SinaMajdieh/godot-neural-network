@@ -1,12 +1,10 @@
+
+## Trains and evaluates a GPU-accelerated neural network in a background thread.
+## Why:
+## Separating training to a dedicated thread prevents blocking the main
+## application loop and allows the Godot editor/game to remain responsive.
+
 extends Node
-
-"""
-Trains and evaluates a GPU-accelerated neural network in a background thread.
-
-Why:
-Separating training to a dedicated thread prevents blocking the main
-application loop and allows the Godot editor/game to remain responsive.
-"""
 
 # ==========================
 # ───── EXPORTED PROPERTIES ─────
@@ -44,9 +42,6 @@ var training_thread: Thread
 # ==========================
 
 func _ready() -> void:
-	"""
-	Starts the training process in a separate thread.
-	"""
 	training_thread = Thread.new()
 	training_thread.start(_run_training)
 
@@ -56,18 +51,16 @@ func _ready() -> void:
 # ==========================
 
 func _run_training() -> void:
-	"""
-	Threaded entry point for initializing, training, and evaluating the model.
-	"""
-	var shader_runner: ShaderRunner = _create_shader_runner()
-	var network: NeuralNetwork = _create_network(shader_runner)
+	var forward_runner: ForwardPassRunner = ForwardPassRunner.new(ConfigKeys.SHADERS_PATHS.FORWARD_PASS)
+	var backward_runner: BackwardPassRunner = BackwardPassRunner.new(ConfigKeys.SHADERS_PATHS.BACKWARD_PASS)
+	var network: NeuralNetwork = _create_network(forward_runner)
 	var split: DataSplit= _load_and_split_data()
 
 	print(split.train_targets.size())
 	print(split.train_targets.count(PackedFloat32Array([1.0])))
 	print(split.train_targets)
 
-	var trainer: Trainer= _create_trainer(shader_runner, network)
+	var trainer: Trainer= _create_trainer(backward_runner, network)
 	var training_time: int = _run_training_loop(
 		trainer,
 		split.train_inputs,
@@ -85,24 +78,7 @@ func _run_training() -> void:
 	call_deferred("_on_training_complete")
 
 
-# ==========================
-# ───── INITIALIZATION HELPERS ─────
-# ==========================
-
-func _create_shader_runner() -> ShaderRunner:
-	"""
-	Creates the GPU shader executor for forward/backward passes.
-	"""
-	return ShaderRunner.new(
-		"res://scripts/neural_network/gpu/shaders/forward_pass.spv",
-		"res://scripts/neural_network/gpu/shaders/backward_pass.spv"
-	)
-
-
-func _create_network(shader_runner: ShaderRunner) -> NeuralNetwork:
-	"""
-	Initializes the neural network with configured properties and runner.
-	"""
+func _create_network(shader_runner: ForwardPassRunner) -> NeuralNetwork:
 	return NeuralNetwork.new({
 		ConfigKeys.NETWORK.LAYER_SIZES: layer_sizes,
 		ConfigKeys.NETWORK.RUNNER: shader_runner,
@@ -112,14 +88,13 @@ func _create_network(shader_runner: ShaderRunner) -> NeuralNetwork:
 			NetworkLayer.WeightInitialization.XAVIER
 	})
 
-
+##
+## Creates the trainer object with optimizer, loss, and other settings.
+##
 func _create_trainer(
-	shader_runner: ShaderRunner,
+	shader_runner: BackwardPassRunner,
 	network: NeuralNetwork
 ) -> Trainer:
-	"""
-	Creates the trainer object with optimizer, loss, and other settings.
-	"""
 	return Trainer.new({
 		ConfigKeys.TRAINER.NETWORK: network,
 		ConfigKeys.TRAINER.RUNNER: shader_runner,
@@ -130,15 +105,10 @@ func _create_trainer(
 		ConfigKeys.TRAINER.BATCH_SIZE: batch_size
 	})
 
-
-# ==========================
-# ───── DATA HANDLING ─────
-# ==========================
-
+##
+## Loads CSV input/target data, slices per ratio, and returns train/test split.
+##
 func _load_and_split_data() -> DataSplit:
-	"""
-	Loads CSV input/target data, slices per ratio, and returns train/test split.
-	"""
 	var input_vectors: Array[PackedFloat32Array] = DataSetUtils.load_csv_as_batches(
 		"res://data/processed_inputs.csv",
 		10
@@ -161,30 +131,24 @@ func _load_and_split_data() -> DataSplit:
 	)
 
 
-# ==========================
-# ───── TRAINING LOOP ─────
-# ==========================
-
+##
+## Executes training and returns elapsed time in milliseconds.
+##
 func _run_training_loop(
 	trainer: Trainer,
 	train_inputs: Array[PackedFloat32Array],
 	train_targets: Array[PackedFloat32Array]
 ) -> int:
-	"""
-	Executes training and returns elapsed time in milliseconds.
-	"""
 	var start_time: int = Time.get_ticks_msec()
 	trainer.train(train_inputs, train_targets)
 	var end_time: int = Time.get_ticks_msec()
 	return end_time - start_time
 
 
-# ==========================
-# ───── CLEANUP ─────
-# ==========================
 
+##
+## Joins the training thread once training is done.
+##
 func _on_training_complete() -> void:
-	"""
-	Joins the training thread once training is done.
-	"""
+
 	training_thread.wait_to_finish()

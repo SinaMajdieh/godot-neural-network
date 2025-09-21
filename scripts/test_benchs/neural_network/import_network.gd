@@ -10,9 +10,9 @@ extends Control
 
 # Runs once when scene is ready to perform prediction.
 func _ready() -> void:
-	var runner: ShaderRunner = _create_shader_runner()
+	var forward_runner: ForwardPassRunner = ForwardPassRunner.new(ConfigKeys.SHADERS_PATHS.FORWARD_PASS)
 	var network: NeuralNetwork = NeuralNetworkSerializer.import(
-		runner, network_path
+		forward_runner, network_path
 	)
 
 	var input: Array[PackedFloat32Array] = [
@@ -35,10 +35,3 @@ func _show_input_image(data: PackedFloat32Array) -> void:
 	var image: Image = ImageUtils.image_from_f32_array(data, 32, 32)
 	var texture: Texture = ImageTexture.create_from_image(image)
 	$TextureRect.texture = texture
-
-# Creates the GPU shader runner for inference.
-func _create_shader_runner() -> ShaderRunner:
-	return ShaderRunner.new(
-		"res://scripts/neural_network/gpu/shaders/forward_pass.spv",
-		"res://scripts/neural_network/gpu/shaders/backward_pass.spv"
-	)

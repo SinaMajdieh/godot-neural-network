@@ -101,13 +101,14 @@ func _append_split(
 
 # Main training entry point.
 func _run_training() -> void:
-	var runner: ShaderRunner = _create_shader_runner()
-	var network: NeuralNetwork = _create_network(runner)
+	var forward_runner: ForwardPassRunner = ForwardPassRunner.new(ConfigKeys.SHADERS_PATHS.FORWARD_PASS)
+	var backward_runner: BackwardPassRunner = BackwardPassRunner.new(ConfigKeys.SHADERS_PATHS.BACKWARD_PASS)
+	var network: NeuralNetwork = _create_network(forward_runner)
 	var split: DataSplit = read_data()
 
 	var trainer: Trainer = Trainer.new({
 		ConfigKeys.TRAINER.NETWORK: network,
-		ConfigKeys.TRAINER.RUNNER: runner,
+		ConfigKeys.TRAINER.RUNNER: backward_runner,
 		ConfigKeys.TRAINER.LOSS: loss,
 		ConfigKeys.TRAINER.LEARNING_RATE: learning_rate,
 		ConfigKeys.TRAINER.LAMBDA_L2: lambda_l2,
@@ -153,15 +154,8 @@ func _train_once(
 	trainer.train(tr_inputs, tr_targets)
 	return Time.get_ticks_msec() - start_ms
 
-# Creates the GPU shader runner.
-func _create_shader_runner() -> ShaderRunner:
-	return ShaderRunner.new(
-		"res://scripts/neural_network/gpu/shaders/forward_pass.spv",
-		"res://scripts/neural_network/gpu/shaders/backward_pass.spv"
-	)
-
 # Creates the neural network based on current parameters.
-func _create_network(runner: ShaderRunner) -> NeuralNetwork:
+func _create_network(runner: ForwardPassRunner) -> NeuralNetwork:
 	return NeuralNetwork.new({
 		ConfigKeys.NETWORK.LAYER_SIZES: layer_sizes,
 		ConfigKeys.NETWORK.RUNNER: runner,

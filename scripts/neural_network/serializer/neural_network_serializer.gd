@@ -40,7 +40,7 @@ static func export(network: NeuralNetwork, path: String) -> void:
 
 # Loads a network resource from disk and assigns a shader runner.
 static func import(
-	runner: ShaderRunner,
+	runner: ForwardPassRunner,
 	path: String
 ) -> NeuralNetwork:
 	var res: Resource = load(path)
