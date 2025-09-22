@@ -12,8 +12,8 @@ layout(local_size_x = 64) in;
 //
 // Input Buffers
 //
-layout(std430, binding = 0) buffer ActivationBuffer {
-    float activations[];
+layout(std430, binding = 0) buffer PreActivationBuffer {
+    float pre_acts[];
 };
 
 layout(std430, binding = 1) buffer ErrorBuffer {
@@ -51,33 +51,43 @@ layout(std140, binding = 6) uniform LayerMeta {
     uint num_vectors;       // Number of input vectors (batch size)
 };
 
-//
-// Computes the derivative of tanh activation function.
-// Used to scale error signal during backpropagation.
-//
-float compute_sigmoid_derivative(float s) {
+// Activation functions (recomputed here for derivative)
+// To avoid storing both a and z, we derive a from z locally when needed
+float sigmoid_from_z(float z) {
+    return 1.0 / (1.0 + exp(-z));
+}
+float tanh_from_z(float z) {
+    float e_pos = exp(z);
+    float e_neg = exp(-z);
+    return (e_pos - e_neg) / (e_pos + e_neg);
+}
+
+// Derivatives using z
+float compute_sigmoid_derivative_from_z(float z) {
+    float s = sigmoid_from_z(z);
     return s * (1.0 - s);
 }
 
-float compute_tanh_derivative(float t) {
+float compute_tanh_derivative_from_z(float z) {
+    float t = tanh_from_z(z);
     return 1.0 - t * t;
 }
 
-float compute_relu_derivative(float x) {
-    return x > 0.0 ? 1.0 : 0.0;
+float compute_relu_derivative_from_z(float z) {
+    return z > 0.0 ? 1.0 : 0.0;
 }
 
-float compute_leaky_relu_derivative(float x) {
-    return x > 0.0 ? 1.0 : 0.01;
+float compute_leaky_relu_derivative_from_z(float z) {
+    return z > 0.0 ? 1.0 : 0.01;
 }
 
-float compute_derivative(float activated_value, uint act_type) {
-    if (act_type == ACT_SIGMOID)     return compute_sigmoid_derivative(activated_value);
-    if (act_type == ACT_TANH)        return compute_tanh_derivative(activated_value);
-    if (act_type == ACT_RELU)        return compute_relu_derivative(activated_value);
-    if (act_type == ACT_LEAKY_RELU)  return compute_leaky_relu_derivative(activated_value);
-    if (act_type == ACT_SOFTMAX) return 1.0; // SoftMax + Cross Entropy Loss
-    return 1.0; // Linear fallback
+float compute_derivative(float z, uint act_type) {
+    if (act_type == ACT_SIGMOID)     return compute_sigmoid_derivative_from_z(z);
+    if (act_type == ACT_TANH)        return compute_tanh_derivative_from_z(z);
+    if (act_type == ACT_RELU)        return compute_relu_derivative_from_z(z);
+    if (act_type == ACT_LEAKY_RELU)  return compute_leaky_relu_derivative_from_z(z);
+    if (act_type == ACT_SOFTMAX)     return 1.0; // handled in loss for stability
+    return 1.0;
 }
 
 
@@ -87,9 +97,9 @@ float compute_derivative(float activated_value, uint act_type) {
 //
 float compute_neuron_delta(uint vector_index, uint neuron_index, uint act_type) {
     uint offset = vector_index * output_size + neuron_index;
-    float activation = activations[offset];
+    float z = pre_acts[offset]; // now reading z
     float error = errors[offset];
-    float derivative = compute_derivative(activation, act_type);;
+    float derivative = compute_derivative(z, act_type);
     return error * derivative;
 }
 
@@ -137,7 +147,7 @@ void main() {
     uint act_type = activation_types[0]; // Assuming one layer at a time
     // Compute delta and accumulate gradients
     float delta = compute_neuron_delta(vector_index, neuron_index, act_type);
-    delta = clamp(delta, -1.0, 1.0);
+    // delta = clamp(delta, -1.0, 1.0);
     accumulate_weight_gradients(vector_index, neuron_index, delta);
     accumulate_bias_gradient(neuron_index, delta);
 }

@@ -12,12 +12,12 @@ func _ready() -> void:
 	var forward_runner: ForwardPassRunner = ForwardPassRunner.new(ConfigKeys.SHADERS_PATHS.FORWARD_PASS)
 	
 	# Step 2: Define a small network architecture (2→3→1).
-	var layer_sizes: Array[int] = [2, 3, 1]
+	var layer_sizes: Array[int] = [2, 3, 2]
 	var network: NeuralNetwork = NeuralNetwork.new({
 		ConfigKeys.NETWORK.LAYER_SIZES: layer_sizes,
 		ConfigKeys.NETWORK.RUNNER: forward_runner,
 		ConfigKeys.NETWORK.HIDDEN_ACT: Activations.Type.TANH,
-		ConfigKeys.NETWORK.OUTPUT_ACT: Activations.Type.TANH,
+		ConfigKeys.NETWORK.OUTPUT_ACT: Activations.Type.SOFTMAX,
 		ConfigKeys.NETWORK.WEIGHT_INIT: 
 			NetworkLayer.WeightInitialization.XAVIER
 	})
@@ -30,13 +30,13 @@ func _ready() -> void:
 	]
 
 	# Step 4: Run the forward pass.
-	var output: PackedFloat32Array = network.forward_pass(input_batch)
+	var output: PackedFloat32Array = network.forward_pass(input_batch, true)
 
 	# Step 5: Print results for verification.
 	print("Forward pass complete.")
 	for i: int in range(input_batch.size()):
-		print("Input %d: %s → Output: %f" % 
-			[i, input_batch[i], output[i]])
+		print("Input %d: %s → Output: %s" % 
+			[i, input_batch[i], output.slice(i * layer_sizes[-1], (i+1) * layer_sizes[-1])])
 
 
 # Generates a randomized input batch for testing.

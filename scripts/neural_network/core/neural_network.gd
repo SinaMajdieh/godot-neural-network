@@ -17,7 +17,8 @@ const KEYS: Dictionary = {
 var layers: Array[NetworkLayer] = []                         ## Ordered list of network layers
 var layers_activation: Array[Activations.Type] = []          ## Activation type per layer
 var runner: ForwardPassRunner                                     ## GPU shader runner
-var cached_layer_outputs: Array[PackedFloat32Array] = []     ## Cached outputs from each layer
+var cached_post_act_layer_outputs: Array[PackedFloat32Array] = []     ## Cached outputs from each layer
+var cached_pre_act_layer_outputs: Array[PackedFloat32Array] = []     ## Cached outputs from each layer
 
 ## Constructs the network using the given layer sizes and GPU shader runner.
 ## @param layer_sizes List of neuron counts per layer
@@ -76,8 +77,8 @@ func get_all_biases() -> PackedFloat32Array:
 ## Performs a forward pass on the input batch using GPU acceleration.
 ## @param input_batch Array of PackedFloat32Array inputs (one per sample)
 ## @return Final output from the last layer
-func forward_pass(input_batch: Array[PackedFloat32Array]) -> PackedFloat32Array:
-	cached_layer_outputs.clear()
+func forward_pass(input_batch: Array[PackedFloat32Array], reutrn_pre_act: bool = false) -> PackedFloat32Array:
+	cached_post_act_layer_outputs.clear()
 
 	var batch_size: int = input_batch.size()
 	var flat_inputs: PackedFloat32Array = TensorUtils.flatten_batch(input_batch)
@@ -96,7 +97,7 @@ func forward_pass(input_batch: Array[PackedFloat32Array]) -> PackedFloat32Array:
 	)
 
 	var threads: int = batch_size * metadata.output_sizes.max()
-	var output_buffer: RID = runner.dispatch_full_network(
+	var output_buffers: Dictionary = runner.dispatch_full_network(
 		flat_inputs,
 		flat_weights,
 		flat_biases,
@@ -106,14 +107,26 @@ func forward_pass(input_batch: Array[PackedFloat32Array]) -> PackedFloat32Array:
 		threads
 	)
 
-	var output_floats: PackedFloat32Array = TensorUtils.bytes_to_floats(runner.get_buffer_data(output_buffer))
-	runner.rd.free_rid(output_buffer)
+	var post_act_output_floats: PackedFloat32Array = TensorUtils.bytes_to_floats(runner.get_buffer_data(output_buffers.POST_ACT))
+	var pre_act_output_floats: PackedFloat32Array = TensorUtils.bytes_to_floats(runner.get_buffer_data(output_buffers.PRE_ACT))
 
-	cached_layer_outputs = NetworkUtils.split_intermediates_to_layers(
-		output_floats,
+	runner.rd.free_rid(output_buffers.POST_ACT)
+	runner.rd.free_rid(output_buffers.PRE_ACT)
+
+	cached_post_act_layer_outputs = NetworkUtils.split_intermediates_to_layers(
+		post_act_output_floats,
+		metadata.interm_offsets,
+		metadata.output_sizes,
+		batch_size
+	)
+	cached_pre_act_layer_outputs = NetworkUtils.split_intermediates_to_layers(
+		pre_act_output_floats,
 		metadata.interm_offsets,
 		metadata.output_sizes,
 		batch_size
 	)
 
-	return cached_layer_outputs[-1]
+	if reutrn_pre_act:
+		return cached_pre_act_layer_outputs[-1]
+	else:
+		return cached_post_act_layer_outputs[-1]

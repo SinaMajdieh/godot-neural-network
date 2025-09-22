@@ -15,7 +15,7 @@ var training_thread: Thread
 
 @export_category("Network Properties")
 @export var layer_sizes: Array[int] = [32 * 32, 32, 16, 1]
-@export var export_name: String = "digit_recognition.tres"
+@export_file("*.tres") var export_path: String = "res://scripts/test_benchs/trained_neural_networks/digit_recognition.tres"
 @export var export_network: bool = false
 
 @export_category("Training Properties")
@@ -44,10 +44,9 @@ var training_targets: Array[PackedFloat32Array] = []
 func _ready() -> void:
 	_init_empty_datasets()
 	_process_inputs_targets()
-	show_input_as_image(training_inputs[26])
+	show_input_as_image(training_inputs[0])
 	training_thread = Thread.new()
 	training_thread.start(_run_training)
-
 
 # Initializes dictionaries for data storage.
 func _init_empty_datasets() -> void:
@@ -91,12 +90,13 @@ func _run_training() -> void:
 
 	var trainer: Trainer = Trainer.new({
 		ConfigKeys.TRAINER.NETWORK: network,
-		ConfigKeys.TRAINER.RUNNER: forward_runner,
+		ConfigKeys.TRAINER.RUNNER: backward_runner,
 		ConfigKeys.TRAINER.LOSS: loss,
-		ConfigKeys.TRAINER.LEARNING_RATE: backward_runner,
+		ConfigKeys.TRAINER.LEARNING_RATE: learning_rate,
 		ConfigKeys.TRAINER.LAMBDA_L2: lambda_l2,
 		ConfigKeys.TRAINER.EPOCHS: epochs,
-		ConfigKeys.TRAINER.BATCH_SIZE: batch_size
+		ConfigKeys.TRAINER.BATCH_SIZE: batch_size,
+		ConfigKeys.TRAINER.GRADIENT_CLIP_TRESHOLD: 1
 	})
 
 	var satisfied: bool = false
@@ -129,7 +129,7 @@ func _run_training() -> void:
 			satisfied = true
 
 	if export_network:
-		NeuralNetworkSerializer.export(network, export_name)
+		NeuralNetworkSerializer.export(network, export_path)
 
 	call_deferred("_on_training_complete")
 

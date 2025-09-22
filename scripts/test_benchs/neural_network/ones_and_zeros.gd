@@ -32,6 +32,10 @@ var training_thread: Thread
 @export var output_layer_activation: Activations.Type = \
 	Activations.Type.SIGMOID
 
+func _ready() -> void:
+	training_thread = Thread.new()
+	training_thread.start(_run_training)
+
 # Holds paired input/target arrays for each label.
 class Data:
 	var inputs: Array[PackedFloat32Array]
@@ -48,10 +52,10 @@ class Data:
 func read_data() -> DataSplit:
 	var result: DataSplit = DataSplit.new()
 	var ones: Data = read_label(
-		ones_dir, PackedFloat32Array([0, 1, 0, 0])
+		ones_dir, PackedFloat32Array([0, 1])
 	)
 	var zeros: Data = read_label(
-		zeros_dir, PackedFloat32Array([1, 0, 0, 0])
+		zeros_dir, PackedFloat32Array([1, 0])
 	)
 
 	var usable_size: int = int(
@@ -127,7 +131,7 @@ func _run_training() -> void:
 		print("Training time: %d ms" % time_ms)
 
 		var test_acc: float = ModelEvaluator.evaluate_model_soft_max(
-			network, split.test_inputs, split.test_targets, true
+			network, split.test_inputs, split.test_targets	
 		)
 		print_rich("[color=cyan]Test Accuracy: %4.2f" % test_acc)
 

@@ -27,11 +27,15 @@ layout(std430, binding = 3) buffer ActivationTypeBuffer {
     uint activation_types[]; // One per layer
 };
 
-layout(std430, binding = 4) buffer IntermediatesBuffer {
+layout(std430, binding = 4) buffer PreactivationsBuffer {
+    float pre_acts[];
+};
+
+layout(std430, binding = 5) buffer IntermediatesBuffer {
     float intermediates[];
 };
 
-layout(std430, binding = 5) buffer MetaBuffer {
+layout(std430, binding = 6) buffer MetaBuffer {
     uint layer_count;
     uint batch_size;
     uint input_sizes[32];
@@ -46,13 +50,13 @@ layout(std430, binding = 5) buffer MetaBuffer {
 // === Activation Functions ===
 //
 float activate_sigmoid(float x) {
-    x = clamp(x, -20.0, 20.0);
+    // x = clamp(x, -20.0, 20.0);
     x = 1.0 / (1.0 + exp(-x));
     return x;
 }
 
 float activate_tanh(float x) {
-    x = clamp(x, -20.0, 20.0);
+    // x = clamp(x, -20.0, 20.0);
     float e_pos = exp(x);
     float e_neg = exp(-x);
     return (e_pos - e_neg) / (e_pos + e_neg);
@@ -142,6 +146,9 @@ void main() {
                 float w_val = weights[w_off + neuron_idx * in_size + i];
                 sum += in_val * w_val;
             }
+
+            // write pre-activation (z)
+            pre_acts[out_off_layer + sample_idx * out_size + neuron_idx] = sum;
 
             // for everything but softmax apply immediatly
             if (activation_types[layer_idx] != ACT_SOFTMAX){

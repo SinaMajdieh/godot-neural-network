@@ -1,6 +1,6 @@
 [gd_scene load_steps=2 format=3 uid="uid://cun1ml6gj7f66"]
 
-[ext_resource type="Script" uid="uid://dfhb8njmk7q2b" path="res://scripts/test_benchs/neural_network/ten_digit_recognition.gd" id="1_g0yv0"]
+[ext_resource type="Script" uid="uid://dfhb8njmk7q2b" path="res://scripts/test_benchs/neural_network/ten_digit_recognition.gd" id="1_dmt05"]
 
 [node name="TenDigitRecognition" type="Control"]
 layout_mode = 3
@@ -9,15 +9,15 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-script = ExtResource("1_g0yv0")
+script = ExtResource("1_dmt05")
 training_data_dir = "C:/Users/sinam/Desktop/test/go"
-input_size_ratio = 0.2
-layer_sizes = Array[int]([1024, 16, 8, 5])
-export_name = "0-1_digit_recognition.tres"
-learning_rate = 0.100001
+input_size_ratio = 0.4
+layer_sizes = Array[int]([1024, 100, 10])
+export_path = "res://scripts/test_benchs/trained_neural_networks/0_10_digit_recognition.tres"
+export_network = true
 lambda_l2 = 0.001001
 loss = 2
-epochs = 200
+epochs = 250
 batch_size = 64
 hidden_layers_activation = 3
 output_layer_activation = 5

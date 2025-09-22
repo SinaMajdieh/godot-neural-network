@@ -23,8 +23,8 @@ enum WeightInitialization {
 }
 
 static var weight_init_map: Dictionary[WeightInitialization, Callable] = {
-    WeightInitialization.KAIMING: func(fan_in: int) -> float: return sqrt(2.0 / fan_in),
-    WeightInitialization.XAVIER: func(fan_in: int) -> float: return sqrt(6.0 / fan_in),
+    WeightInitialization.KAIMING: func(fan_in: int, fan_out: int) -> float: return sqrt(2.0 / float(fan_in + fan_out)),
+    WeightInitialization.XAVIER: func(fan_in: int, fan_out: int) -> float: return sqrt(6.0 / float(fan_in + fan_out)),
 }
 
 ## Initializes the layer with given input/output sizes and randomized parameters.
@@ -41,7 +41,7 @@ func _initialize_parameters(weight_init_method: WeightInitialization) -> void:
 ## Generates a weight matrix of shape [output_size][input_size] with values in [-scale, scale].
 static func _generate_weight_matrix(in_size: int, out_size: int, weight_init_method: WeightInitialization) -> Array[Array]:
     var matrix: Array[Array] = []
-    var scale: float = weight_init_map[weight_init_method].call(in_size)
+    var scale: float = weight_init_map[weight_init_method].call(in_size, out_size)
     for out_idx: int in range(out_size):
         var row: Array[float] = []
         for in_idx: int in range(in_size):
@@ -95,11 +95,11 @@ func update_parameters_with_gradients(
             grad += lambda_l2 * weight_matrix[i][j] * 2.0 # l2 regulazation
             if TensorUtils.is_nan_or_exploding(grad, GRADIENT_EXPLOSION_THRESHOLD):
                 push_error("Exploding gradient in weight [%d][%d]" % [i, j])
-                grad = clamp(grad, -GRADIENT_THRESHOLD, GRADIENT_THRESHOLD)
+                #grad = clamp(grad, -GRADIENT_THRESHOLD, GRADIENT_THRESHOLD)
             weight_matrix[i][j] -= (lr / batch_size) * grad
 
         var bias_grad: float = bias_grads[i]
         if TensorUtils.is_nan_or_exploding(bias_grad, GRADIENT_EXPLOSION_THRESHOLD):
             push_error("Exploding gradient in bias [%d]" % i)
-            bias_grad = clamp(bias_grad, -GRADIENT_THRESHOLD, GRADIENT_THRESHOLD)
+            #bias_grad = clamp(bias_grad, -GRADIENT_THRESHOLD, GRADIENT_THRESHOLD)
         bias_vector[i] -= (lr / batch_size) * bias_grad

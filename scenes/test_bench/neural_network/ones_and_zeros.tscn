@@ -4,12 +4,13 @@
 
 [node name="OnesAndZeros" type="Node"]
 script = ExtResource("1_gk73b")
-zeros_dir = "C:/Users/sinam/Desktop/test/0"
-ones_dir = "C:/Users/sinam/Desktop/test/1"
-learning_rate = 0.700001
+zeros_dir = "C:/Users/sinam/Desktop/test/go/0"
+ones_dir = "C:/Users/sinam/Desktop/test/go/1"
+layer_sizes = Array[int]([1024, 15, 2])
+learning_rate = 0.500001
 lambda_l2 = 1e-06
 loss = 2
-epochs = 150
+epochs = 100
 batch_size = 128
 hidden_layers_activation = 3
 output_layer_activation = 5
