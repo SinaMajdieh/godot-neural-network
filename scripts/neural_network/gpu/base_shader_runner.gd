@@ -29,9 +29,10 @@ func create_buffer(data: Variant) -> RID:
 	)
 
 func create_empty_buffer(size_in_floats: int) -> RID:
-	var bytes: PackedByteArray = PackedByteArray()
-	bytes.resize(size_in_floats * 4)
-	return rd.storage_buffer_create(bytes.size(), bytes)
+	var data: PackedFloat32Array = PackedFloat32Array()
+	data.resize(size_in_floats)
+	data.fill(0.0)
+	return create_buffer(data)
 
 func get_buffer_data(buffer: RID) -> PackedByteArray:
 	return rd.buffer_get_data(buffer)

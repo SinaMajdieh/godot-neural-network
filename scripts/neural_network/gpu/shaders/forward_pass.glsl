@@ -6,7 +6,7 @@
 #define ACT_LEAKY_RELU   4
 #define ACT_SOFTMAX      5
 
-layout(local_size_x = 64) in;
+layout(local_size_x = 256) in;
 
 //
 // === Buffer Bindings ===

@@ -43,8 +43,8 @@ static func compute_batch_loss(
 				push_error("Unknown Loss Type: %s" % str(loss_type))
 
 	# Mean over all batch elements (matches PyTorch/TensorFlow)
-	var output_size: int = targets[0].size()
-	return total_loss / (targets.size() * output_size)
+	
+	return total_loss / (targets.size())
 
 
 static func compute_batch_errors(
@@ -101,11 +101,9 @@ static func compute_loss_bce_from_logits(
 		var z: float = logits[value_index]
 		# Branch by z’s sign to prevent exp overflow
 		if z >= 0.0:
-			loss += (1.0 - targets[value_index]) * z \
-			        + log(1.0 + exp(-z))
+			loss += (1.0 - targets[value_index]) * z + log(1.0 + exp(-z))
 		else:
-			loss += -targets[value_index] * z \
-			        + log(1.0 + exp(z))
+			loss += -targets[value_index] * z + log(1.0 + exp(z))
 	return loss
 
 

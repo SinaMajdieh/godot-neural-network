@@ -23,7 +23,7 @@ enum WeightInitialization {
 }
 
 static var weight_init_map: Dictionary[WeightInitialization, Callable] = {
-    WeightInitialization.KAIMING: func(fan_in: int, fan_out: int) -> float: return sqrt(2.0 / float(fan_in + fan_out)),
+    WeightInitialization.KAIMING: func(fan_in: int, _fan_out: int) -> float: return (sqrt(6.0 / float(fan_in)) * sqrt(2.0)),
     WeightInitialization.XAVIER: func(fan_in: int, fan_out: int) -> float: return sqrt(6.0 / float(fan_in + fan_out)),
 }
 

@@ -54,7 +54,8 @@ func dispatch_backward(
 	_dispatch_compute(
 		backward_pipeline,
 		uniform_set,
-		output_size * num_vectors
+		output_size * num_vectors,
+		256
 	)
 
 	# Clean up

@@ -11,15 +11,12 @@ grow_horizontal = 2
 grow_vertical = 2
 script = ExtResource("1_dmt05")
 training_data_dir = "C:/Users/sinam/Desktop/test/go"
-input_size_ratio = 0.4
-layer_sizes = Array[int]([1024, 100, 10])
-export_path = "res://scripts/test_benchs/trained_neural_networks/0_10_digit_recognition.tres"
-export_network = true
-lambda_l2 = 0.001001
+input_size_ratio = 0.01
+layer_sizes = Array[int]([1024, 64, 32, 10])
+learning_rate = 0.07000100000000001
+lambda_l2 = 0.002001
 loss = 2
-epochs = 250
-batch_size = 64
-hidden_layers_activation = 3
+epochs = 200
 output_layer_activation = 5
 
 [node name="TextureRect" type="TextureRect" parent="."]

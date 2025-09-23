@@ -1,23 +1,35 @@
-# TrainNetwork.gd
-# Handles end-to-end training workflow for digit recognition.
-# Why: Encapsulates dataset prep, network setup, training, and export.
-
 extends Control
+class_name TrainNetwork
 
-# Thread for asynchronous training.
+## Handles end-to-end training workflow for digit recognition.
+## WHY: Encapsulates dataset preparation, network setup, training,
+##      evaluation, and optional export.
+
+# -------------------------------------------------------------------
+# Threads
+# -------------------------------------------------------------------
 var training_thread: Thread
 
+# -------------------------------------------------------------------
+# Data Properties
+# -------------------------------------------------------------------
 @export_category("Data")
 @export_global_dir var training_data_dir: String
 @export_range(0.0, 1.0) var image_scale: float = 0.25
 @export_range(0.0, 1.0) var input_size_ratio: float = 1.0
 @export var category_size: int = 900
 
+# -------------------------------------------------------------------
+# Network Properties
+# -------------------------------------------------------------------
 @export_category("Network Properties")
 @export var layer_sizes: Array[int] = [32 * 32, 32, 16, 1]
 @export_file("*.tres") var export_path: String = "res://scripts/test_benchs/trained_neural_networks/digit_recognition.tres"
 @export var export_network: bool = false
 
+# -------------------------------------------------------------------
+# Training Properties
+# -------------------------------------------------------------------
 @export_category("Training Properties")
 @export_range(0.000001, 10) var learning_rate: float = 0.6
 @export_range(0.000001, 1) var lambda_l2: float = 0.0001
@@ -25,37 +37,51 @@ var training_thread: Thread
 @export_range(1, 1000) var epochs: int = 400
 @export_range(1, 1_000_000) var batch_size: int = 1024
 @export_range(0.0, 1.0) var test_size_ratio: float = 0.2
-@export var weight_initialization: NetworkLayer.WeightInitialization = \
-	NetworkLayer.WeightInitialization.XAVIER
-@export var hidden_layers_activation: Activations.Type = \
-	Activations.Type.TANH
-@export var output_layer_activation: Activations.Type = \
-	Activations.Type.SIGMOID
+@export var weight_initialization: NetworkLayer.WeightInitialization = NetworkLayer.WeightInitialization.XAVIER
+@export var hidden_layers_activation: Activations.Type = Activations.Type.TANH
+@export var output_layer_activation: Activations.Type = Activations.Type.SIGMOID
 
-# Holds per-category inputs and targets before concatenation.
+# -------------------------------------------------------------------
+# Optimizer Properties
+# -------------------------------------------------------------------
+@export_category("Optimizers")
+@export_subgroup("Gradient Clipping")
+@export var gradient_clip_enable: bool = false
+@export var gradient_clip_threshold: float = 1.0
+
+# -------------------------------------------------------------------
+# Training data storage
+# -------------------------------------------------------------------
 var training_inputs_dic: Dictionary[int, Array] = {}
 var training_targets_dic: Dictionary[int, Array] = {}
-
-# Final concatenated training sets.
 var training_inputs: Array[PackedFloat32Array] = []
 var training_targets: Array[PackedFloat32Array] = []
 
-# Called on scene load to prepare data and start training.
+# -------------------------------------------------------------------
+# Lifecycle
+# -------------------------------------------------------------------
+
 func _ready() -> void:
 	_init_empty_datasets()
 	_process_inputs_targets()
-	show_input_as_image(training_inputs[0])
+
+	show_input_as_image(training_inputs[3])
+	print("Number of images: %d" % training_inputs.size())
+
 	training_thread = Thread.new()
 	training_thread.start(_run_training)
 
-# Initializes dictionaries for data storage.
+# -------------------------------------------------------------------
+# Dataset Preparation
+# -------------------------------------------------------------------
+
+## Initialize empty dataset dictionaries
 func _init_empty_datasets() -> void:
 	for i: int in range(10):
 		training_inputs_dic[i] = []
 		training_targets_dic[i] = []
 
-
-# Prepares input and target sets from folder data.
+## Load and process dataset into final training arrays
 func _process_inputs_targets() -> void:
 	training_inputs_dic = training_data_to_dic(training_data_dir)
 	training_targets_dic = generate_targets(training_inputs_dic)
@@ -69,18 +95,29 @@ func _process_inputs_targets() -> void:
 		int(category_size * input_size_ratio)
 	)
 
+# -------------------------------------------------------------------
+# Utility Visualization
+# -------------------------------------------------------------------
 
-# Renders a given input vector as a 32×32 image in the UI.
+## Shows an input vector as a 32×32 image in the UI  
 func show_input_as_image(data: PackedFloat32Array) -> void:
 	var image: Image = ImageUtils.image_from_f32_array(data, 32, 32)
 	var texture: Texture = ImageTexture.create_from_image(image)
 	$TextureRect.texture = texture
 
+# -------------------------------------------------------------------
+# Training Execution
+# -------------------------------------------------------------------
 
-# Main training routine, executed in a background thread.
+## Main training routine (background thread)
 func _run_training() -> void:
-	var forward_runner: ForwardPassRunner = ForwardPassRunner.new(ConfigKeys.SHADERS_PATHS.FORWARD_PASS)
-	var backward_runner: BackwardPassRunner = BackwardPassRunner.new(ConfigKeys.SHADERS_PATHS.BACKWARD_PASS)
+	var forward_runner: ForwardPassRunner = ForwardPassRunner.new(
+		ConfigKeys.SHADERS_PATHS.FORWARD_PASS
+	)
+	var backward_runner: BackwardPassRunner = BackwardPassRunner.new(
+		ConfigKeys.SHADERS_PATHS.BACKWARD_PASS
+	)
+
 	var network: NeuralNetwork = _create_network(forward_runner)
 	var split: DataSplit = DataSetUtils.train_test_split(
 		training_inputs,
@@ -96,25 +133,29 @@ func _run_training() -> void:
 		ConfigKeys.TRAINER.LAMBDA_L2: lambda_l2,
 		ConfigKeys.TRAINER.EPOCHS: epochs,
 		ConfigKeys.TRAINER.BATCH_SIZE: batch_size,
-		ConfigKeys.TRAINER.GRADIENT_CLIP_TRESHOLD: 1
+		ConfigKeys.TRAINER.GRADIENT_CLIP_OPTIMIZER:
+			GradientClipOptimizer.new(
+				gradient_clip_enable,
+				gradient_clip_threshold
+			)
 	})
 
 	var satisfied: bool = false
 	while not satisfied:
 		satisfied = true
+
 		var training_time: int = _run_training_loop(
 			trainer,
 			split.train_inputs,
 			split.train_targets
 		)
-
 		print("Training time: %d ms" % training_time)
 
 		var test_acc: float = ModelEvaluator.evaluate_model_soft_max(
 			network,
 			split.test_inputs,
 			split.test_targets,
-			false
+			true
 		)
 		print_rich("[color=cyan]Test Accuracy: %4.2f" % test_acc)
 
@@ -133,7 +174,7 @@ func _run_training() -> void:
 
 	call_deferred("_on_training_complete")
 
-# Initializes the neural network with set layers and activations.
+## Construct network with configured layers and activations
 func _create_network(shader_runner: ForwardPassRunner) -> NeuralNetwork:
 	return NeuralNetwork.new({
 		ConfigKeys.NETWORK.LAYER_SIZES: layer_sizes,
@@ -143,8 +184,7 @@ func _create_network(shader_runner: ForwardPassRunner) -> NeuralNetwork:
 		ConfigKeys.NETWORK.WEIGHT_INIT: weight_initialization
 	})
 
-
-# Runs training and returns elapsed time in milliseconds.
+## Executes the training loop and returns elapsed ms
 func _run_training_loop(
 	trainer: Trainer,
 	train_inputs: Array[PackedFloat32Array],
@@ -155,13 +195,15 @@ func _run_training_loop(
 	var end_time: int = Time.get_ticks_msec()
 	return end_time - start_time
 
-
-# Cleans up training thread after completion.
+## Cleanup after training finishes
 func _on_training_complete() -> void:
 	training_thread.wait_to_finish()
 
+# -------------------------------------------------------------------
+# Data Helpers
+# -------------------------------------------------------------------
 
-# Merges per-category arrays into a single dataset.
+## Merge per-category arrays into a single dataset
 func concatenate_data(
 	data: Dictionary[int, Array],
 	data_size: int
@@ -172,8 +214,7 @@ func concatenate_data(
 			result.append(data[key][i])
 	return result
 
-
-# Reads training data from folder structure into dictionary form.
+## Read dataset from directories into category dictionary
 func training_data_to_dic(path: String) -> Dictionary[int, Array]:
 	var results: Dictionary[int, Array] = {}
 	var dirs: PackedStringArray = FileUtils.list_dirs(path)
@@ -185,17 +226,18 @@ func training_data_to_dic(path: String) -> Dictionary[int, Array]:
 
 	return results
 
-
-# Creates a one-hot encoded vector for a given index.
-func generate_one_hot(hot_idx: int, length: int) -> PackedFloat32Array:
+## Creates a one-hot encoded vector
+func generate_one_hot(
+	hot_idx: int,
+	length: int
+) -> PackedFloat32Array:
 	var one_hot: PackedFloat32Array = []
 	one_hot.resize(length)
 	one_hot.fill(0.0)
 	one_hot[hot_idx] = 1.0
 	return one_hot
 
-
-# Generates repeated one-hot encoded vectors.
+## Creates repeated one-hot vectors
 func generate_one_hots(
 	hot_idx: int,
 	length: int,
@@ -206,8 +248,7 @@ func generate_one_hots(
 		results.append(generate_one_hot(hot_idx, length))
 	return results
 
-
-# Creates per-category one-hot targets for given inputs.
+## Create target dictionary with one-hots per category
 func generate_targets(inputs: Dictionary[int, Array]) -> Dictionary[int, Array]:
 	var results: Dictionary[int, Array] = {}
 	for key: int in inputs:

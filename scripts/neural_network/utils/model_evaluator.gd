@@ -1,17 +1,25 @@
-class_name ModelEvaluator
 extends RefCounted
+class_name ModelEvaluator
 
-# Provides model evaluation utilities for classification accuracy.
-# Why: Keeps testing logic clean and independent from training code.
+## Provides model evaluation utilities for classification accuracy.
+## WHY: Keeps testing logic modular and separate from training routines.
 
-# Evaluates classification accuracy for multi-class models using softmax.
-# Params:
-#   network (NeuralNetwork): Model to evaluate.
-#   inputs (Array[PackedFloat32Array]): Input batch.
-#   targets (Array[PackedFloat32Array]): Expected class one-hot vectors.
-#   debug (bool): If true, prints misclassifications.
-# Returns:
-#   float: Accuracy value between 0.0 and 1.0.
+# -------------------------------------------------------------------
+# Multi-class classification evaluation
+# -------------------------------------------------------------------
+
+## Evaluates classification accuracy for multi-class models using softmax.
+## WHY: Uses argmax comparison against one-hot encoded targets to measure
+##      prediction correctness.
+##
+## Params:
+##   network - model under evaluation
+##   inputs - batch of input vectors
+##   targets - one-hot encoded expected outputs
+##   debug - optional flag to print misclassified samples
+##
+## Returns:
+##   Accuracy score between 0.0 and 1.0
 static func evaluate_model_soft_max(
 	network: NeuralNetwork,
 	inputs: Array[PackedFloat32Array],
@@ -29,24 +37,32 @@ static func evaluate_model_soft_max(
 		var pred: PackedFloat32Array = predictions[i]
 		var target: PackedFloat32Array = targets[i]
 		var idx: int = find_max_value_index(pred)
+
 		if target[idx] == 1:
 			correct += 1
 		elif debug:
 			print_rich(
-				"Test case %3d : prediction [color=red]%d[/color] "
-				+ "target [color=green]%d[/color]"
-				% [i, idx + 1, find_max_value_index(target) + 1]
+				"Test case %3d: prediction [color=red]%d[/color] target " +
+				"[color=green]%d[/color]" % [i, idx, find_max_value_index(target)]
 			)
+
 	return float(correct) / float(predictions.size())
 
+# -------------------------------------------------------------------
+# Binary classification evaluation
+# -------------------------------------------------------------------
 
-# Evaluates binary classification model accuracy.
-# Params:
-#   network (NeuralNetwork): Model to evaluate.
-#   inputs (Array[PackedFloat32Array]): Input batch.
-#   targets (Array[PackedFloat32Array]): Expected binary values.
-# Returns:
-#   float: Accuracy value between 0.0 and 1.0.
+## Evaluates binary classification accuracy using a fixed threshold of 0.5.
+## WHY: Common for sigmoid output, translates continuous predictions to
+##      discrete class labels.
+##
+## Params:
+##   network - model under evaluation
+##   inputs - batch of input vectors
+##   targets - expected binary outputs
+##
+## Returns:
+##   Accuracy score between 0.0 and 1.0
 static func evaluate_model(
 	network: NeuralNetwork,
 	inputs: Array[PackedFloat32Array],
@@ -54,7 +70,8 @@ static func evaluate_model(
 ) -> float:
 	var predictions_flat: PackedFloat32Array = network.forward_pass(inputs)
 	var predictions: Array[PackedFloat32Array] = TensorUtils.unflatten_batch(
-		predictions_flat, 1
+		predictions_flat,
+		1
 	)
 	var correct: int = 0
 
@@ -63,14 +80,16 @@ static func evaluate_model(
 		var target: float = targets[i][0]
 		if int(pred >= 0.5) == int(target):
 			correct += 1
+
 	return float(correct) / float(predictions.size())
 
+# -------------------------------------------------------------------
+# Helpers
+# -------------------------------------------------------------------
 
-# Finds the index of the maximum value in a float array.
-# Params:
-#   arr (PackedFloat32Array): Input values.
-# Returns:
-#   int: Index of the max value, or -1 if empty.
+## Returns the index of the largest value in an array.
+## WHY: Argmax is the standard for selecting predicted class in classification.
+##      Returns -1 if input array is empty (avoids undefined index).
 static func find_max_value_index(arr: PackedFloat32Array) -> int:
 	var max_value: float = -INF
 	var max_idx: int = -1

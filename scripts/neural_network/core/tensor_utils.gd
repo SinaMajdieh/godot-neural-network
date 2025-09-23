@@ -1,134 +1,161 @@
 extends RefCounted
 class_name TensorUtils
 
-##
-## Utility class for tensor operations and data conversions.
-## Provides batch flattening, reshaping, byte/float conversions, and safety checks.
-##
+## Utility methods for tensor operations and data conversions.
+## WHY: Centralizes low-level data reshaping, encoding/decoding, and validation
+##      to keep training/evaluation code lean and maintainable.
 
-##
-## Flattens a batch of vectors into a single PackedFloat32Array.
-##
-## @param batch Array of PackedFloat32Array vectors
-## @return Flattened PackedFloat32Array
-##
+# -------------------------------------------------------------------
+# Batch flattening / unflattening
+# -------------------------------------------------------------------
+
+## Flattens a batch of vectors into a single packed float array.
+## WHY: Shaders and GPU calls often require contiguous memory layouts.
 static func flatten_batch(batch: Array[PackedFloat32Array]) -> PackedFloat32Array:
-    var flat: PackedFloat32Array = PackedFloat32Array()
-    for vector: PackedFloat32Array in batch:
-        flat.append_array(vector)
-    return flat
+	var flat: PackedFloat32Array = PackedFloat32Array()
+	for vector: PackedFloat32Array in batch:
+		flat.append_array(vector)
+	return flat
 
-##
-## Reshapes a flat array into a batch of vectors.
-##
-## @param flat Flattened data
-## @param vector_size Number of elements per vector
-## @return Array of PackedFloat32Array vectors
-##
-static func unflatten_batch(flat: PackedFloat32Array, vector_size: int) -> Array[PackedFloat32Array]:
-    var batch: Array[PackedFloat32Array] = []
-    var total_vectors: int = flat.size() / vector_size
-    for i: int in range(total_vectors):
-        var vector: PackedFloat32Array = PackedFloat32Array()
-        for j: int in range(vector_size):
-            vector.append(flat[i * vector_size + j])
-        batch.append(vector)
-    return batch
+## Reshapes a flat array back into a batch of vectors.
+## WHY: Restores logical per-sample grouping after GPU computation.
+static func unflatten_batch(
+	flat: PackedFloat32Array,
+	vector_size: int
+) -> Array[PackedFloat32Array]:
+	var batch: Array[PackedFloat32Array] = []
+	var total_vectors: int = flat.size() / vector_size
 
-##
-## Converts a byte array into a float array.
-##
-## @param bytes PackedByteArray containing encoded float data
-## @return Decoded PackedFloat32Array
-##
+	for i: int in range(total_vectors):
+		var vector: PackedFloat32Array = PackedFloat32Array()
+		for j: int in range(vector_size):
+			vector.append(flat[i * vector_size + j])
+		batch.append(vector)
+
+	return batch
+
+# -------------------------------------------------------------------
+# Bytes ↔ Floats / Ints conversions
+# -------------------------------------------------------------------
+
+## Decodes bytes to float32 array.
+## WHY: Reads binary shader outputs back into GDScript-friendly floats.
 static func bytes_to_floats(bytes: PackedByteArray) -> PackedFloat32Array:
-    var floats: PackedFloat32Array = PackedFloat32Array()
-    var total_floats: int = bytes.size() / 4
-    for i: int in range(total_floats):
-        floats.append(bytes.decode_float(i * 4))
-    return floats
+	var floats: PackedFloat32Array = PackedFloat32Array()
+	var total_floats: int = bytes.size() / 4
+	for i: int in range(total_floats):
+		floats.append(bytes.decode_float(i * 4))
+	return floats
 
-##
-## Converts a float array into a byte array.
-##
-## @param floats PackedFloat32Array to encode
-## @return Encoded PackedByteArray
-##
+## Decodes bytes to int32 array.
+## WHY: For integer-coded tensor data from shaders.
+static func bytes_to_ints(bytes: PackedByteArray) -> PackedInt32Array:
+	var ints: PackedInt32Array = PackedInt32Array()
+	var total_ints: int = bytes.size() / 4
+	for i: int in range(total_ints):
+		ints.append(bytes.decode_s32(i * 4))
+	return ints
+
+## Decodes bytes holding uint bit patterns into floats.
+## WHY: Needed when GPU atomics store float bits via uint encoding.
+static func uint_bytes_to_floats(bytes: PackedByteArray) -> PackedFloat32Array:
+	var floats: PackedFloat32Array = PackedFloat32Array()
+	var total_values: int = bytes.size() / 4
+
+	for i: int in range(total_values):
+		var bits: int = bytes.decode_u32(i * 4)
+		floats.append(float_from_bits(bits))
+
+	return floats
+
+## Interprets 32-bit integer bits as float value.
+static func float_from_bits(bits: int) -> float:
+	var ba: PackedByteArray = PackedByteArray()
+	ba.resize(4)
+	ba.encode_u32(0, bits)
+	return ba.decode_float(0)
+
+## Encodes float array into byte array.
 static func floats_to_bytes(floats: PackedFloat32Array) -> PackedByteArray:
-    return floats.to_byte_array()
+	return floats.to_byte_array()
 
-##
-## Reshapes a flat gradient array into a 2D weight matrix.
-##
-## @param flat Flat gradient array
-## @param input_size Number of input neurons
-## @param output_size Number of output neurons
-## @return 2D weight matrix [output][input]
-##
-static func reshape_weights(flat: PackedFloat32Array, input_size: int, output_size: int) -> Array[Array]:
-    var expected_size: int = input_size * output_size
-    if flat.size() < expected_size:
-        push_error("reshape_weights: Expected %d elements, got %d" % [expected_size, flat.size()])
-        return []
+# -------------------------------------------------------------------
+# Weight / gradient reshaping
+# -------------------------------------------------------------------
 
-    var matrix: Array[Array] = []
-    for i: int in range(output_size):
-        var row: Array[float] = []
-        for j: int in range(input_size):
-            row.append(flat[i * input_size + j])
-        matrix.append(row)
-    return matrix
+## Reshapes a flat array into a 2D weight matrix [output][input].
+## WHY: Aligns gradients/weights to layer structure for CPU-side inspection.
+static func reshape_weights(
+	flat: PackedFloat32Array,
+	input_size: int,
+	output_size: int
+) -> Array[Array]:
+	var expected_size: int = input_size * output_size
+	if flat.size() < expected_size:
+		push_error("reshape_weights: Expected %d elements, got %d" % [expected_size, flat.size()])
+		return []
 
-##
-## Splits input and target data into mini-batches.
-##
-## @param inputs Array of input vectors
-## @param targets Array of target vectors
-## @param batch_size Number of samples per batch
-## @return Array of dictionaries with keys "inputs" and "targets"
-##
-static func create_batches(inputs: Array[PackedFloat32Array], targets: Array[PackedFloat32Array], batch_size: int) -> Array[Dictionary]:
-    var batches: Array[Dictionary] = []
-    var total_samples: int = inputs.size()
+	var matrix: Array[Array] = []
+	for i: int in range(output_size):
+		var row: Array[float] = []
+		for j: int in range(input_size):
+			row.append(flat[i * input_size + j])
+		matrix.append(row)
 
-    for i: int in range(0, total_samples, batch_size):
-        var input_batch: Array[PackedFloat32Array] = inputs.slice(i, i + min(batch_size, total_samples - i))
-        var target_batch: Array[PackedFloat32Array] = targets.slice(i, i + min(batch_size, total_samples - i))
-        batches.append({
-            "inputs": input_batch,
-            "targets": target_batch
-        })
-    return batches
+	return matrix
 
-##
-## Shuffles input and target data in-place using a shared permutation.
-##
-## @param inputs Array of input vectors
-## @param targets Array of target vectors
-##
-static func shuffle_data(inputs: Array[PackedFloat32Array], targets: Array[PackedFloat32Array]) -> void:
-    var indices: Array[int] = []
-    for i: int in range(inputs.size()):
-        indices.append(i)
-    indices.shuffle()
+# -------------------------------------------------------------------
+# Dataset batching / shuffling
+# -------------------------------------------------------------------
 
-    var shuffled_inputs: Array[PackedFloat32Array] = []
-    var shuffled_targets: Array[PackedFloat32Array] = []
-    for i: int in indices:
-        shuffled_inputs.append(inputs[i])
-        shuffled_targets.append(targets[i])
+## Splits inputs and targets into mini-batches.
+## WHY: Supports batch-based training without manual slicing.
+static func create_batches(
+	inputs: Array[PackedFloat32Array],
+	targets: Array[PackedFloat32Array],
+	batch_size: int
+) -> Array[Dictionary]:
+	var batches: Array[Dictionary] = []
+	var total_samples: int = inputs.size()
 
-    inputs.clear()
-    targets.clear()
-    inputs.append_array(shuffled_inputs)
-    targets.append_array(shuffled_targets)
+	for i: int in range(0, total_samples, batch_size):
+		var end_idx: int = i + min(batch_size, total_samples - i)
+		var input_batch: Array[PackedFloat32Array] = inputs.slice(i, end_idx)
+		var target_batch: Array[PackedFloat32Array] = targets.slice(i, end_idx)
+		batches.append({
+			"inputs": input_batch,
+			"targets": target_batch
+		})
 
-##
-## Checks if a value is NaN or exceeds a specified threshold.
-##
-## @param value Float value to check
-## @param exploding_threshold Threshold for explosion detection
-## @return True if value is NaN or exceeds threshold
-##
+	return batches
+
+## Shuffles inputs and targets in-place with shared permutation.
+## WHY: Maintains input/target pairing while randomizing sample order.
+static func shuffle_data(
+	inputs: Array[PackedFloat32Array],
+	targets: Array[PackedFloat32Array]
+) -> void:
+	var indices: Array[int] = []
+	for i: int in range(inputs.size()):
+		indices.append(i)
+	indices.shuffle()
+
+	var shuffled_inputs: Array[PackedFloat32Array] = []
+	var shuffled_targets: Array[PackedFloat32Array] = []
+	for i: int in indices:
+		shuffled_inputs.append(inputs[i])
+		shuffled_targets.append(targets[i])
+
+	inputs.clear()
+	targets.clear()
+	inputs.append_array(shuffled_inputs)
+	targets.append_array(shuffled_targets)
+
+# -------------------------------------------------------------------
+# Validation helpers
+# -------------------------------------------------------------------
+
+## Checks if value is NaN or above specified magnitude threshold.
+## WHY: Detects numerical instability or exploding parameters.
 static func is_nan_or_exploding(value: float, exploding_threshold: float) -> bool:
-    return is_nan(value) or abs(value) > exploding_threshold
+	return is_nan(value) or abs(value) > exploding_threshold

@@ -51,7 +51,7 @@ func dispatch_full_network(
 	], forward_shader)
 
 	# Dispatch one thread per neuron/output element
-	_dispatch_compute(forward_pipeline, uniform_set, total_threads)
+	_dispatch_compute(forward_pipeline, uniform_set, total_threads, 256)
 
 	# Free transient input buffers (outputs stay alive for read-back)
 	rd.free_rid(input_buf)
