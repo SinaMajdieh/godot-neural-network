@@ -46,3 +46,10 @@ static func list_dirs(path: String) -> PackedStringArray:
 		file_name = dir.get_next()
 	dir.list_dir_end()
 	return dirs
+
+static func get_home_directory() -> String:
+	# Cross‑platform approach
+	if OS.get_name() == "Windows":
+		return OS.get_environment("USERPROFILE")  # Windows home path
+	else:
+		return OS.get_environment("HOME")         # Linux / macOS home path

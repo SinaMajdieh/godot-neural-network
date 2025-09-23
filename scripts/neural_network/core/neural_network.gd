@@ -86,7 +86,7 @@ func forward_pass(input_batch: Array[PackedFloat32Array], reutrn_pre_act: bool =
 	var flat_biases: PackedFloat32Array = get_all_biases()
 
 	var metadata: NetworkUtils.LayerMetadata = NetworkUtils.compute_layer_metadata(layers, batch_size)
-	var meta_bytes: PackedByteArray = ShaderRunner.build_meta_buffer(
+	var meta_bytes: PackedByteArray = ForwardPassRunner.build_meta_buffer(
 		layers.size(),
 		batch_size,
 		metadata.input_sizes,
