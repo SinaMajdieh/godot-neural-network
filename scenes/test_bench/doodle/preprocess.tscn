@@ -1,7 +1,0 @@
-[gd_scene load_steps=2 format=3 uid="uid://dwaiabuo2pyxe"]
-
-[ext_resource type="Script" uid="uid://bju02p7gdsl7i" path="res://scripts/test_benchs/doodle/doodle_preprocess.gd" id="1_0tbwf"]
-
-[node name="Preprocess" type="Node"]
-script = ExtResource("1_0tbwf")
-doodle_path = "C:/Users/sinam/Desktop/doodle test/guitar/4758805453733888.png"

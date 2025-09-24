@@ -1,0 +1,141 @@
+[gd_scene load_steps=16 format=3 uid="uid://bvnqohybd54cw"]
+
+[ext_resource type="Script" uid="uid://cqo0sjjyk4is7" path="res://examples/classifier/base_classifier/scripts/main.gd" id="1_iu2kt"]
+[ext_resource type="PackedScene" uid="uid://6t13mheyjid8" path="res://examples/classifier/base_classifier/scenes/item_picker.tscn" id="2_njdkb"]
+[ext_resource type="Script" uid="uid://bpwid7rjwantx" path="res://examples/classifier/base_classifier/scripts/network_chose_button.gd" id="3_4q4mw"]
+[ext_resource type="Script" uid="uid://4roxyuyaxxv6" path="res://examples/classifier/base_classifier/scripts/directory_chose_button.gd" id="4_ux2la"]
+[ext_resource type="PackedScene" uid="uid://dmh6gnp25hcfi" path="res://examples/classifier/base_classifier/scenes/confidence_list.tscn" id="5_7ydwa"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_8xjbt"]
+content_margin_left = 10.0
+content_margin_top = 10.0
+content_margin_right = 10.0
+content_margin_bottom = 10.0
+bg_color = Color(1, 1, 1, 1)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_hqr17"]
+content_margin_left = 5.0
+content_margin_top = 5.0
+content_margin_right = 5.0
+content_margin_bottom = 5.0
+bg_color = Color(0.94509804, 0.9529412, 0.9607843, 1)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_cnwjs"]
+bg_color = Color(0.5254902, 0.5568628, 0.5882353, 1)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_8imif"]
+bg_color = Color(0.28627452, 0.3137255, 0.34117648, 1)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_2vwn1"]
+bg_color = Color(0.28627452, 0.3137255, 0.34117648, 1)
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_8xjbt"]
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_hqr17"]
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_cnwjs"]
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_8imif"]
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_2vwn1"]
+
+[node name="Main" type="Control" node_paths=PackedStringArray("network_button", "input_folder_button", "item_select", "input_button", "confidence_list")]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_iu2kt")
+network_button = NodePath("PanelContainer/HBoxContainer/PanelContainer/VBoxContainer/HBoxContainer/Netowork")
+input_folder_button = NodePath("PanelContainer/HBoxContainer/PanelContainer/VBoxContainer/HBoxContainer/Input")
+item_select = NodePath("PanelContainer/HBoxContainer/ItemPicker")
+input_button = NodePath("PanelContainer/HBoxContainer/PanelContainer/VBoxContainer/Preview")
+confidence_list = NodePath("PanelContainer/HBoxContainer/PanelContainer/VBoxContainer/ConfidenceList")
+
+[node name="PanelContainer" type="PanelContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_8xjbt")
+
+[node name="HBoxContainer" type="HBoxContainer" parent="PanelContainer"]
+layout_mode = 2
+
+[node name="ItemPicker" parent="PanelContainer/HBoxContainer" instance=ExtResource("2_njdkb")]
+layout_mode = 2
+
+[node name="PanelContainer" type="PanelContainer" parent="PanelContainer/HBoxContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_styles/panel = SubResource("StyleBoxFlat_hqr17")
+
+[node name="VBoxContainer" type="VBoxContainer" parent="PanelContainer/HBoxContainer/PanelContainer"]
+layout_mode = 2
+theme_override_constants/separation = 20
+
+[node name="HBoxContainer" type="HBoxContainer" parent="PanelContainer/HBoxContainer/PanelContainer/VBoxContainer"]
+layout_mode = 2
+size_flags_vertical = 0
+
+[node name="NetworkLabel" type="Label" parent="PanelContainer/HBoxContainer/PanelContainer/VBoxContainer/HBoxContainer"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0, 0, 0, 1)
+text = "Network:"
+
+[node name="Netowork" type="Button" parent="PanelContainer/HBoxContainer/PanelContainer/VBoxContainer/HBoxContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.28627452, 0.3137255, 0.34117648, 1)
+theme_override_styles/normal = SubResource("StyleBoxFlat_cnwjs")
+theme_override_styles/hover = SubResource("StyleBoxFlat_8imif")
+theme_override_styles/hover_pressed = SubResource("StyleBoxFlat_2vwn1")
+text = "chose network"
+text_overrun_behavior = 3
+clip_text = true
+script = ExtResource("3_4q4mw")
+
+[node name="InputLabel" type="Label" parent="PanelContainer/HBoxContainer/PanelContainer/VBoxContainer/HBoxContainer"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0, 0, 0, 1)
+text = "Inputs: "
+
+[node name="Input" type="Button" parent="PanelContainer/HBoxContainer/PanelContainer/VBoxContainer/HBoxContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.28627452, 0.3137255, 0.34117648, 1)
+theme_override_styles/normal = SubResource("StyleBoxFlat_cnwjs")
+theme_override_styles/hover = SubResource("StyleBoxFlat_8imif")
+theme_override_styles/hover_pressed = SubResource("StyleBoxFlat_2vwn1")
+text = "chose input"
+text_overrun_behavior = 3
+clip_text = true
+script = ExtResource("4_ux2la")
+
+[node name="Preview" type="Button" parent="PanelContainer/HBoxContainer/PanelContainer/VBoxContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_colors/font_color = Color(0.12941177, 0.14509805, 0.16078432, 1)
+theme_override_colors/font_focus_color = Color(0.12941177, 0.14509805, 0.16078432, 1)
+theme_override_colors/font_pressed_color = Color(0.12941177, 0.14509805, 0.16078432, 1)
+theme_override_colors/font_hover_color = Color(0.12941177, 0.14509805, 0.16078432, 1)
+theme_override_colors/font_hover_pressed_color = Color(0.12941177, 0.14509805, 0.16078432, 1)
+theme_override_colors/font_disabled_color = Color(0.12941177, 0.14509805, 0.16078432, 1)
+theme_override_colors/font_outline_color = Color(0.12941177, 0.14509805, 0.16078432, 1)
+theme_override_font_sizes/font_size = 30
+theme_override_styles/normal = SubResource("StyleBoxEmpty_8xjbt")
+theme_override_styles/pressed = SubResource("StyleBoxEmpty_hqr17")
+theme_override_styles/hover = SubResource("StyleBoxEmpty_cnwjs")
+theme_override_styles/disabled = SubResource("StyleBoxEmpty_8imif")
+theme_override_styles/focus = SubResource("StyleBoxEmpty_2vwn1")
+button_mask = 0
+flat = true
+icon_alignment = 1
+vertical_icon_alignment = 0
+expand_icon = true
+
+[node name="ConfidenceList" parent="PanelContainer/HBoxContainer/PanelContainer/VBoxContainer" instance=ExtResource("5_7ydwa")]
+layout_mode = 2

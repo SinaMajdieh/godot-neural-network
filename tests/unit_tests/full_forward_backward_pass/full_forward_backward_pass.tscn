@@ -1,0 +1,6 @@
+[gd_scene load_steps=2 format=3 uid="uid://ck45ur6tp3tet"]
+
+[ext_resource type="Script" uid="uid://deppkx5sir4k6" path="res://tests/unit_tests/full_forward_backward_pass/full_forward_backward_pass.gd" id="1_4xgde"]
+
+[node name="TestBench2" type="Node"]
+script = ExtResource("1_4xgde")

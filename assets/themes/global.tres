@@ -1,6 +1,6 @@
 [gd_resource type="Theme" load_steps=2 format=3 uid="uid://xird5f4t8rk6"]
 
-[ext_resource type="FontFile" uid="uid://cqfhi41on63fo" path="res://scenes/helvetica-rounded-bold-5871d05ead8de.otf" id="1_0qu2w"]
+[ext_resource type="FontFile" uid="uid://bo7uwf522hjxv" path="res://assets/fonts/helvectia/helvetica-rounded-bold-5871d05ead8de.otf" id="1_0qu2w"]
 
 [resource]
 default_font = ExtResource("1_0qu2w")

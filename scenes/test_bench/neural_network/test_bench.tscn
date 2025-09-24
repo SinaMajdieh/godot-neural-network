@@ -1,9 +1,0 @@
-[gd_scene load_steps=2 format=3 uid="uid://dwcseuf47mq7l"]
-
-[ext_resource type="Script" uid="uid://c4nji45xnwv8o" path="res://scripts/test_benchs/neural_network/test_bench_real_data.gd" id="1_2k1in"]
-
-[node name="TestBench" type="Node"]
-script = ExtResource("1_2k1in")
-learning_rate = 0.500001
-epochs = 50
-batch_size = 1024

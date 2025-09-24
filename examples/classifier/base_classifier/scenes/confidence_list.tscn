@@ -1,0 +1,20 @@
+[gd_scene load_steps=2 format=3 uid="uid://dmh6gnp25hcfi"]
+
+[ext_resource type="Script" uid="uid://6r5oyih7e3ju" path="res://examples/classifier/base_classifier/scripts/confidence_list.gd" id="1_ps0xn"]
+
+[node name="ConfidenceList" type="VBoxContainer" node_paths=PackedStringArray("ref_label")]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_ps0xn")
+ref_label = NodePath("Label")
+
+[node name="Label" type="Label" parent="."]
+visible = false
+layout_mode = 2
+theme_override_colors/font_color = Color(0.6784314, 0.70980394, 0.7411765, 1)
+theme_override_font_sizes/font_size = 16
+horizontal_alignment = 1
+vertical_alignment = 1

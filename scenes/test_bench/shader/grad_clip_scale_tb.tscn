@@ -1,6 +1,0 @@
-[gd_scene load_steps=2 format=3 uid="uid://bon7una4us5bd"]
-
-[ext_resource type="Script" uid="uid://bdh1jsppad1h7" path="res://scripts/test_benchs/shaders/grad_clip_scale_tb.gd" id="1_ri03f"]
-
-[node name="GradClipScaleTb" type="Node"]
-script = ExtResource("1_ri03f")

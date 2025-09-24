@@ -1,0 +1,6 @@
+[gd_scene load_steps=2 format=3 uid="uid://b3wyd3xcnhvqo"]
+
+[ext_resource type="Script" uid="uid://b226odg1mqxst" path="res://tests/unit_tests/gradient_clip_norm/gradient_clip_norm.gd" id="1_kg5ah"]
+
+[node name="GradClipNormTb" type="Node"]
+script = ExtResource("1_kg5ah")

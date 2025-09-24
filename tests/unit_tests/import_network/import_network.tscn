@@ -1,0 +1,45 @@
+[gd_scene load_steps=2 format=3 uid="uid://dlct0q7vrdv5q"]
+
+[ext_resource type="Script" uid="uid://d3o04bo2ewdcc" path="res://tests/unit_tests/import_network/import_network.gd" id="1_7xuo3"]
+
+[node name="ImportNetwork" type="Control" node_paths=PackedStringArray("texture_rect", "label")]
+layout_mode = 3
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_7xuo3")
+network_path = "C:/Users/sinam/Documents/coding stuff/Godot projects/neural-network/scripts/test_benchs/trained_neural_networks/digit_recognition.tres"
+test_image = "C:/Users/sinam/Desktop/test/go/4/img005-00261.png"
+texture_rect = NodePath("VBoxContainer/TextureRect")
+label = NodePath("VBoxContainer/Label")
+
+[node name="VBoxContainer" type="VBoxContainer" parent="."]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -37.5
+offset_top = -20.0
+offset_right = 37.5
+offset_bottom = 20.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="TextureRect" type="TextureRect" parent="VBoxContainer"]
+layout_mode = 2
+size_flags_horizontal = 4
+size_flags_vertical = 6
+stretch_mode = 2
+
+[node name="Label" type="Label" parent="VBoxContainer"]
+layout_mode = 2
+size_flags_vertical = 6
+text = "This is a 0"
+horizontal_alignment = 1
+vertical_alignment = 1
