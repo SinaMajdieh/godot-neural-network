@@ -52,8 +52,8 @@ input_folder_button = NodePath("PanelContainer/HBoxContainer/PanelContainer/VBox
 item_select = NodePath("PanelContainer/HBoxContainer/ItemPicker")
 input_button = NodePath("PanelContainer/HBoxContainer/PanelContainer/VBoxContainer/Preview")
 confidence_list = NodePath("PanelContainer/HBoxContainer/PanelContainer/VBoxContainer/ConfidenceList")
-refrence_list = Array[String](["Cat", "Guitar"])
-image_scale = 0.252
+refrence_list = Array[String](["Camel", "Camera", "Cat", "Cookie", "Cow", "Dog", "Guitar", "Hammer", "Light House"])
+image_scale = 0.126
 invert_image = true
 
 [node name="PanelContainer" type="PanelContainer" parent="."]

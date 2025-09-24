@@ -109,7 +109,7 @@ func _process_inputs_targets() -> void:
 
 ## Shows an input vector as a 32×32 image in the UI  
 func show_input_as_image(data: PackedFloat32Array) -> void:
-	var image: Image = ImageUtils.image_from_f32_array(data, 64, 64)
+	var image: Image = ImageUtils.image_from_f32_array(data, 32, 32)
 	var texture: Texture = ImageTexture.create_from_image(image)
 	$TextureRect.texture = texture
 
@@ -147,7 +147,7 @@ func _run_training() -> void:
 				gradient_clip_threshold
 			)
 	})
-
+	trainer.lr_schedular = LRSchedular.new(LRSchedular.Type.COSINE, epochs, learning_rate * 0.25)
 	var satisfied: bool = false
 	while not satisfied:
 		satisfied = true
