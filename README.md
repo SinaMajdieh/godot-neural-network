@@ -1,6 +1,6 @@
 # Godot Neural Network Framework
 
-![Doodle Recognition Demo](assets\demo\demo_doodle.gif)
+![Doodle Recognition Demo](assets/demo/demo_doodle.gif)
 
 ## Introduction
 
@@ -180,7 +180,7 @@ GIFs demonstrate live performance inside Godot, running with GPU‑accelerated f
 Trains a neural network on **9,000 images of digits** (0–9),  
 achieving **~97% test accuracy** using Categorical Cross‑Entropy loss and Tahn activations.  
 **GIF Preview:**
-![Digit Recognition Demo](assets\demo\demo_digits.gif)
+![Digit Recognition Demo](assets/demo/demo_digits.gif)
 
 ---
 
@@ -189,7 +189,7 @@ achieving **~97% test accuracy** using Categorical Cross‑Entropy loss and Tahn
 Trains on **9,000 images** across **9 doodle categories** (e.g., light house, guitar, cat),  
 demonstrating the framework’s flexibility with different datasets and input types.
 **GIF Preview:**
-![Doodle Recognition Demo](assets\demo\demo_doodle.gif)
+![Doodle Recognition Demo](assets/demo/demo_doodle.gif)
 
 ### Motivation
 
