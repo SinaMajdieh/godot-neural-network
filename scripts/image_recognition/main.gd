@@ -18,6 +18,21 @@ extends Control
 @export var input_button: Button
 ## WHY: Shows the icon and prediction result after running forward pass.
 
+@export var confidence_list: ConfidenceList
+## WHY: Shows the confidence and probabilities of each outcome after running forward pass.
+
+@export var refrence_list: Array[String] = [
+	"Zero", "One", "Two", "Three", "Four", "Five",
+	"Six", "Seven", "Eight", "Nine"
+]
+## WHY: Maps each probability to a refrence text.
+
+@export var image_scale: float = 0.25
+## WHY: proper image scale to feed the network.
+
+@export var invert_image: bool = false
+## WHY: invert image or not
+
 # -------------------------------------------------------------------
 # Internal State
 # -------------------------------------------------------------------
@@ -32,6 +47,7 @@ func _ready() -> void:
 	network_button.file_chosen.connect(load_network)
 	input_folder_button.directory_chosen.connect(load_inputs)
 	item_select.input_selected.connect(pass_input)
+	confidence_list.set_refrence_list(refrence_list)
 
 # -------------------------------------------------------------------
 # Network Loading
@@ -46,7 +62,7 @@ func load_network(path: String) -> void:
 # -------------------------------------------------------------------
 func load_inputs(path: String) -> void:
 	## WHY: Loads dataset images into the ItemList for selection.
-	item_select.load_directory(path)
+	item_select.load_directory(path, image_scale, invert_image)
 
 # -------------------------------------------------------------------
 # Forward Pass & UI Update
@@ -61,4 +77,6 @@ func pass_input(input_meta: Dictionary) -> void:
 	var prediction: int = ModelEvaluator.find_max_value_index(result)
 
 	input_button.icon = icon
-	input_button.text = "This is a %d" % prediction
+	input_button.text = "This is a %s" % refrence_list[prediction]
+	
+	confidence_list.show_confidence_list(result)

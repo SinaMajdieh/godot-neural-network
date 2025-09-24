@@ -1,9 +1,10 @@
-[gd_scene load_steps=15 format=3 uid="uid://ciiyq555rvuj2"]
+[gd_scene load_steps=16 format=3 uid="uid://ciiyq555rvuj2"]
 
-[ext_resource type="PackedScene" uid="uid://6t13mheyjid8" path="res://scenes/digit_recognition/item_picker.tscn" id="1_dolko"]
-[ext_resource type="Script" uid="uid://cqo0sjjyk4is7" path="res://scripts/digit_recognition/main.gd" id="1_hqr17"]
-[ext_resource type="Script" uid="uid://bpwid7rjwantx" path="res://scripts/digit_recognition/network_chose_button.gd" id="2_8xjbt"]
-[ext_resource type="Script" uid="uid://4roxyuyaxxv6" path="res://scripts/digit_recognition/directory_chose_button.gd" id="2_yo03r"]
+[ext_resource type="PackedScene" uid="uid://6t13mheyjid8" path="res://scenes/image_recognition/item_picker.tscn" id="1_dolko"]
+[ext_resource type="Script" uid="uid://cqo0sjjyk4is7" path="res://scripts/image_recognition/main.gd" id="1_hqr17"]
+[ext_resource type="Script" uid="uid://bpwid7rjwantx" path="res://scripts/image_recognition/network_chose_button.gd" id="2_8xjbt"]
+[ext_resource type="Script" uid="uid://4roxyuyaxxv6" path="res://scripts/image_recognition/directory_chose_button.gd" id="2_yo03r"]
+[ext_resource type="PackedScene" uid="uid://dmh6gnp25hcfi" path="res://scenes/image_recognition/confidence_list.tscn" id="5_cnwjs"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_8xjbt"]
 content_margin_left = 10.0
@@ -38,7 +39,7 @@ bg_color = Color(0.28627452, 0.3137255, 0.34117648, 1)
 
 [sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_2vwn1"]
 
-[node name="Main" type="Control" node_paths=PackedStringArray("network_button", "input_folder_button", "item_select", "input_button")]
+[node name="Main" type="Control" node_paths=PackedStringArray("network_button", "input_folder_button", "item_select", "input_button", "confidence_list")]
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
@@ -49,7 +50,11 @@ script = ExtResource("1_hqr17")
 network_button = NodePath("PanelContainer/HBoxContainer/PanelContainer/VBoxContainer/HBoxContainer/Netowork")
 input_folder_button = NodePath("PanelContainer/HBoxContainer/PanelContainer/VBoxContainer/HBoxContainer/Input")
 item_select = NodePath("PanelContainer/HBoxContainer/ItemPicker")
-input_button = NodePath("PanelContainer/HBoxContainer/PanelContainer/VBoxContainer/Button")
+input_button = NodePath("PanelContainer/HBoxContainer/PanelContainer/VBoxContainer/Preview")
+confidence_list = NodePath("PanelContainer/HBoxContainer/PanelContainer/VBoxContainer/ConfidenceList")
+refrence_list = Array[String](["Cat", "Guitar"])
+image_scale = 0.252
+invert_image = true
 
 [node name="PanelContainer" type="PanelContainer" parent="."]
 layout_mode = 1
@@ -73,10 +78,16 @@ theme_override_styles/panel = SubResource("StyleBoxFlat_hqr17")
 
 [node name="VBoxContainer" type="VBoxContainer" parent="PanelContainer/HBoxContainer/PanelContainer"]
 layout_mode = 2
+theme_override_constants/separation = 20
 
 [node name="HBoxContainer" type="HBoxContainer" parent="PanelContainer/HBoxContainer/PanelContainer/VBoxContainer"]
 layout_mode = 2
 size_flags_vertical = 0
+
+[node name="NetworkLabel" type="Label" parent="PanelContainer/HBoxContainer/PanelContainer/VBoxContainer/HBoxContainer"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0, 0, 0, 1)
+text = "Network:"
 
 [node name="Netowork" type="Button" parent="PanelContainer/HBoxContainer/PanelContainer/VBoxContainer/HBoxContainer"]
 layout_mode = 2
@@ -90,6 +101,11 @@ text_overrun_behavior = 3
 clip_text = true
 script = ExtResource("2_8xjbt")
 
+[node name="InputLabel" type="Label" parent="PanelContainer/HBoxContainer/PanelContainer/VBoxContainer/HBoxContainer"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0, 0, 0, 1)
+text = "Inputs: "
+
 [node name="Input" type="Button" parent="PanelContainer/HBoxContainer/PanelContainer/VBoxContainer/HBoxContainer"]
 layout_mode = 2
 size_flags_horizontal = 3
@@ -102,7 +118,7 @@ text_overrun_behavior = 3
 clip_text = true
 script = ExtResource("2_yo03r")
 
-[node name="Button" type="Button" parent="PanelContainer/HBoxContainer/PanelContainer/VBoxContainer"]
+[node name="Preview" type="Button" parent="PanelContainer/HBoxContainer/PanelContainer/VBoxContainer"]
 layout_mode = 2
 size_flags_vertical = 3
 theme_override_colors/font_color = Color(0.12941177, 0.14509805, 0.16078432, 1)
@@ -112,7 +128,7 @@ theme_override_colors/font_hover_color = Color(0.12941177, 0.14509805, 0.1607843
 theme_override_colors/font_hover_pressed_color = Color(0.12941177, 0.14509805, 0.16078432, 1)
 theme_override_colors/font_disabled_color = Color(0.12941177, 0.14509805, 0.16078432, 1)
 theme_override_colors/font_outline_color = Color(0.12941177, 0.14509805, 0.16078432, 1)
-theme_override_font_sizes/font_size = 20
+theme_override_font_sizes/font_size = 30
 theme_override_styles/normal = SubResource("StyleBoxEmpty_8xjbt")
 theme_override_styles/pressed = SubResource("StyleBoxEmpty_hqr17")
 theme_override_styles/hover = SubResource("StyleBoxEmpty_cnwjs")
@@ -123,3 +139,6 @@ flat = true
 icon_alignment = 1
 vertical_icon_alignment = 0
 expand_icon = true
+
+[node name="ConfidenceList" parent="PanelContainer/HBoxContainer/PanelContainer/VBoxContainer" instance=ExtResource("5_cnwjs")]
+layout_mode = 2

@@ -1,6 +1,6 @@
 [gd_scene load_steps=8 format=3 uid="uid://6t13mheyjid8"]
 
-[ext_resource type="Script" uid="uid://31lwp5bc2it8" path="res://scripts/digit_recognition/item_select.gd" id="1_vypoo"]
+[ext_resource type="Script" uid="uid://31lwp5bc2it8" path="res://scripts/image_recognition/item_select.gd" id="1_vypoo"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_vypoo"]
 bg_color = Color(0.89411765, 0.89411765, 0.89411765, 0)
@@ -44,6 +44,5 @@ max_columns = 20
 same_column_width = true
 icon_mode = 0
 script = ExtResource("1_vypoo")
-gpath = "C:/Users/sinam/Desktop/test/go/3"
 
 [connection signal="item_selected" from="." to="." method="on_item_select"]

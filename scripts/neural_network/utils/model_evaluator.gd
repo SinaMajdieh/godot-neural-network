@@ -42,8 +42,7 @@ static func evaluate_model_soft_max(
 			correct += 1
 		elif debug:
 			print_rich(
-				"Test case %3d: prediction [color=red]%d[/color] target " +
-				"[color=green]%d[/color]" % [i, idx, find_max_value_index(target)]
+				"Test case %3d: prediction [color=red]%d[/color] target [color=green]%d[/color]" % [i, idx, find_max_value_index(target)]
 			)
 
 	return float(correct) / float(predictions.size())

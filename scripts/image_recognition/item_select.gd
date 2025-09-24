@@ -11,9 +11,10 @@ signal input_selected(input: PackedFloat32Array)
 
 ## Loads all images from a given directory into the list.
 ## WHY: Provides quick visual selection of dataset samples for inspection/testing.
-func load_directory(path: String) -> void:
+func load_directory(path: String, image_scale: float, invert_image: bool = false) -> void:
+	clear()
 	var images_path: PackedStringArray = FileUtils.list_files(path)
-	var images: Array[PackedFloat32Array] = ImageUtils.read_images(path, 0.25)
+	var images: Array[PackedFloat32Array] = ImageUtils.read_images(path, image_scale, invert_image)
 
 	for i: int in range(images_path.size()):
 		_add_image_item(

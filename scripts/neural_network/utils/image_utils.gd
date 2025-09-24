@@ -10,7 +10,7 @@ extends RefCounted
 #   scale (float): Scale factor to resize image.
 # Returns:
 #   PackedFloat32Array: Flattened grayscale pixel values.
-static func read_image(path: String, scale: float) -> PackedFloat32Array:
+static func read_image(path: String, scale: float, invert: bool = false) -> PackedFloat32Array:
 	var result: PackedFloat32Array = []
 	var image: Image = Image.new()
 	if image.load(path) != OK:
@@ -26,7 +26,11 @@ static func read_image(path: String, scale: float) -> PackedFloat32Array:
 		for x: int in range(width):
 			var color: Color = image.get_pixel(x, y)
 			var value: float = color.r * 0.299 + color.g * 0.587 + color.b * 0.114
-			result.append((value - 0.5) * 2.0)
+			var scaled_value: float = (value - 0.5) * 2.0
+			if invert:
+				result.append(1.0 - scaled_value)
+			else:
+				result.append(scaled_value)
 	return result
 
 
@@ -36,10 +40,11 @@ static func read_image(path: String, scale: float) -> PackedFloat32Array:
 #   scale (float): Scale factor for each image.
 # Returns:
 #   Array[PackedFloat32Array]: List of processed image data.
-static func read_images(path: String, scale: float) -> Array[PackedFloat32Array]:
+static func read_images(path: String, scale: float, invert: bool = false) -> Array[PackedFloat32Array]:
 	var results: Array[PackedFloat32Array] = []
 	for file: String in FileUtils.list_files(path):
-		results.append(read_image(file, scale))
+		var img_data: PackedFloat32Array = read_image(file, scale, invert) 
+		results.append(img_data)
 	return results
 
 
@@ -62,3 +67,7 @@ static func image_from_f32_array(
 			var v: float = clamp(gray_floats[idx] / 2.0 + 0.5, 0.0, 1.0)
 			img.set_pixel(x, y, Color(v, v, v, 1.0))
 	return img
+
+static func invert_image(data: PackedFloat32Array) -> void:
+	for i: int in range(data.size()):
+		data[i] = 1.0 - data[i]
