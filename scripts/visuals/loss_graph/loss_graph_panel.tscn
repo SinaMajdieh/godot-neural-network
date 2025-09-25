@@ -70,4 +70,5 @@ theme_override_styles/panel = SubResource("StyleBoxFlat_glga7")
 
 [node name="graph" type="Control" parent="VBoxContainer/graph_container"]
 layout_mode = 2
+mouse_filter = 1
 script = ExtResource("2_yinru")
