@@ -51,19 +51,14 @@ var training_thread: Thread
 @export var gradient_clip_threshold: float = 1.0
 
 # -------------------------------------------------------------------
-# Debug Properties
-# -------------------------------------------------------------------
-@export_category("Debug")
-@export var show_image_index: int = 0
-
-
-# -------------------------------------------------------------------
 # Training data storage
 # -------------------------------------------------------------------
 var training_inputs_dic: Dictionary[int, Array] = {}
 var training_targets_dic: Dictionary[int, Array] = {}
 var training_inputs: Array[PackedFloat32Array] = []
 var training_targets: Array[PackedFloat32Array] = []
+
+var loss_panel: LossGraphPanel
 
 # -------------------------------------------------------------------
 # Lifecycle
@@ -73,7 +68,8 @@ func _ready() -> void:
 	_init_empty_datasets()
 	_process_inputs_targets()
 
-	show_input_as_image(training_inputs[show_image_index])
+	loss_panel = LossGraphPanel.new_panel()
+	add_child(loss_panel)
 	print("Number of images: %d" % training_inputs.size())
 
 	training_thread = Thread.new()
@@ -148,6 +144,7 @@ func _run_training() -> void:
 			)
 	})
 	trainer.lr_schedular = LRSchedular.new(LRSchedular.Type.COSINE, epochs, learning_rate * 0.25)
+	trainer.epoch_finished.connect(on_epoch_finished)
 	var satisfied: bool = false
 	while not satisfied:
 		satisfied = true
@@ -181,6 +178,10 @@ func _run_training() -> void:
 		NeuralNetworkSerializer.export(network, export_path)
 
 	call_deferred("_on_training_complete")
+
+# Called upon finshing each epoch
+func on_epoch_finished(loss_value: float, epoch: int) -> void:
+	loss_panel.call_deferred("add_loss", loss_value, epoch)
 
 ## Construct network with configured layers and activations
 func _create_network(shader_runner: ForwardPassRunner) -> NeuralNetwork:

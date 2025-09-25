@@ -13,7 +13,7 @@ const KEYS: Dictionary = {
 	GRADIENT_CLIP_OPTIMIZER = "gradient_clip_optimizer"
 }
 
-signal epoch_finished(loss: float)
+signal epoch_finished(loss: float, epoch: int)
 
 var network: NeuralNetwork
 var runner: BackwardPassRunner
@@ -96,7 +96,7 @@ func _train_epoch(
 		epoch_loss += batch_loss
 
 	var avg_loss: float = epoch_loss / float(batches.size())
-	epoch_finished.emit(avg_loss)
+	epoch_finished.emit(avg_loss, epoch)
 
 	print("Epoch %d - Avg Loss: %f" % [epoch, avg_loss])
 
