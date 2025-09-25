@@ -1,5 +1,6 @@
 # Godot Neural Network Framework
 
+![Loss Visualization Demo](assets/demo/loss_visualization_demo.gif)
 ![Doodle Recognition Demo](assets/demo/demo_doodle.gif)
 
 ## Introduction
@@ -36,8 +37,9 @@ The framework is structured into modular layers and execution pipelines, enablin
 - **CPU Layer (`/scripts/neural_network/core`)** — Implements neural computations and utility logic in pure GDScript for fallback or hybrid execution modes.
 - **GPU Layer (`/scripts/neural_network/gpu`)** — Manages shader loading, SPIR‑V pipelines, and compute kernels. Executes forward and backward passes with optimized parallelism.
 - **Training Engine (`/scripts/neural_network/training`)** — Coordinates the training loop, loss calculations, regularization, gradient clipping, and learning‑rate schedules.
-- **Serializer (`/scripts/neural_networkserializer`)** — Saves and loads trained models with reproducible configuration states.
-- **Examples & Demos (`/examples`)** — Ready‑to‑run Godot scenes showcasing training, inference, and visualization tools in action.
+- **Serializer (`/scripts/neural_network/serializer`)** — Saves and loads trained models with reproducible configuration states.
+- **Visuals (`/scripts/visuals`)** — Interactive and real‑time visualization tools such as the Loss over Epoch graph, performance monitors, and UI components for model training feedback.
+- **Examples & Demos (`/examples`)** — Ready‑to‑run Godot scenes showcasing training workflows, inference, and visualization tools in action.
 
 ### Data Flow
 
@@ -91,7 +93,7 @@ You can use it either as a separate workspace for experiments or embed it direct
 ## Usage
 
 The framework is built for fast prototyping and easy integration.
-You can create networks, set up GPU runners, train models, and export/import them — all from GDScript.
+You can create networks, set up GPU runners, train models, visualize training, and export/import them — all from GDScript.
 
 ### Example: Creating a network
 
@@ -163,6 +165,21 @@ var network: NeuralNetwork = NeuralNetworkSerializer.import(forward_runner, netw
 # Use network for inference...
 ```
 
+### Example: Adding a LossGraphPanel to Your Scene
+
+```gdscript
+# Instantly create and attach a Loss over Epoch visualization panel.
+var loss_panel: LossGraphPanel = LossGraphPanel.new_panel(
+	"Training Loss",   # Panel title
+	200,               # Max data points to store
+	Color("61AFEF")    # Line color
+)
+add_child(loss_panel)
+
+# Later, during training:
+loss_panel.add_loss(current_loss)
+```
+
 ### Why This Matters
 
 - **Modular by Design** — Use only the components you need (datasets, GPU runners, training logic).
@@ -172,13 +189,13 @@ var network: NeuralNetwork = NeuralNetworkSerializer.import(forward_runner, netw
 
 ## Demo Showcase
 
-Below are two example demos included in the `/examples` folder.  
-GIFs demonstrate live performance inside Godot, running with GPU‑accelerated forward passes.
+Below are three example demos included in the `/examples` folder.  
+GIFs demonstrate live performance inside Godot, running with GPU‑accelerated forward passes and interactive tools.
 
 ### Digit Recognition Demo
 
 Trains a neural network on **9,000 images of digits** (0–9),  
-achieving **~97% test accuracy** using Categorical Cross‑Entropy loss and Tahn activations.  
+achieving **~97% test accuracy** using Categorical Cross‑Entropy loss and Tanh activations.  
 **GIF Preview:**
 ![Digit Recognition Demo](assets/demo/demo_digits.gif)
 
@@ -186,10 +203,18 @@ achieving **~97% test accuracy** using Categorical Cross‑Entropy loss and Tahn
 
 ### Doodle Recognition Demo
 
-Trains on **9,000 images** across **9 doodle categories** (e.g., light house, guitar, cat),  
-demonstrating the framework’s flexibility with different datasets and input types.
+Trains on **9,000 images** across **9 doodle categories** (e.g., lighthouse, guitar, cat),  
+demonstrating the framework’s flexibility with different datasets and input types.  
 **GIF Preview:**
 ![Doodle Recognition Demo](assets/demo/demo_doodle.gif)
+
+### Loss over Epoch Visualization Tool
+
+Provides a **real‑time interactive graph** of training loss over epochs,  
+featuring smooth interpolation, hover tooltips with exact loss values, and theme‑driven styling.  
+Helps visually monitor convergence stability during training.  
+**GIF Preview:**
+![Loss over Epoch Visualization](assets/demo/loss_visualization_demo.gif)
 
 ### Motivation
 

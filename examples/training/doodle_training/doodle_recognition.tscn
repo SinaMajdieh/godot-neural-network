@@ -12,6 +12,7 @@ grow_vertical = 2
 script = ExtResource("1_g5uhc")
 training_data_dir = "C:/Users/sinam/Desktop/doodle train"
 image_scale = 0.126
+input_size_ratio = 0.05
 category_size = 1000
 layer_sizes = Array[int]([1024, 64, 32, 9])
 export_path = "res://scripts/test_benchs/trained_neural_networks/doodle_recognition.tres"

@@ -1,0 +1,29 @@
+[gd_resource type="Theme" load_steps=3 format=3 uid="uid://bryiibmat3flu"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_uare4"]
+content_margin_left = 10.0
+content_margin_top = 10.0
+content_margin_right = 10.0
+content_margin_bottom = 10.0
+bg_color = Color(0.972549, 0.9764706, 0.98039216, 1)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_sjnpv"]
+content_margin_left = 5.0
+content_margin_bottom = 5.0
+bg_color = Color(0.5176471, 0.5176471, 0.5176471, 0)
+border_width_left = 5
+border_width_bottom = 5
+border_color = Color(0.12941177, 0.14509805, 0.16078432, 1)
+
+[resource]
+Background/base_type = &"PanelContainer"
+Background/styles/panel = SubResource("StyleBoxFlat_uare4")
+Graph/base_type = &"PanelContainer"
+Graph/colors/grid_color = Color(0.6784314, 0.70980394, 0.7411765, 1)
+Graph/colors/line_color = Color(0.2, 0.6039216, 0.9411765, 1)
+Graph/styles/panel = SubResource("StyleBoxFlat_sjnpv")
+LabelInfo/base_type = &"Label"
+LabelInfo/colors/font_color = Color(0.28627452, 0.3137255, 0.34117648, 1)
+LabelTitle/base_type = &"Label"
+LabelTitle/colors/font_color = Color(0.12941177, 0.14509805, 0.16078432, 1)
+LabelTitle/font_sizes/font_size = 28

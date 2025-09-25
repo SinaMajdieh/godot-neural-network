@@ -7,8 +7,9 @@ const DEFAULT_LINE_COLOR: Color = Color("61AFEF")	# Default line color for graph
 # === Exported Settings ===
 @export var max_points: int = 200					# Max number of points to store
 @export var line_color: Color = DEFAULT_LINE_COLOR	# Curve color
-@export var line_width: float = 1.0					# Curve thickness
+@export var line_width: float = 3.0				# Curve thickness
 @export var hover_threshold: float = 6.0			# Pixel distance for hover detection
+@export var grid: GraphGrid
 
 # === Internal State ===
 var loss_values: Array[float] = []					# Stored loss values in order
@@ -40,7 +41,6 @@ func _draw() -> void:
 func _gui_input(event: InputEvent) -> void:
 	if event is InputEventMouseMotion:
 		_update_hover_value(event.position)			# Track mouse hover position
-		_get_tooltip(event.position)				# Trigger tooltip update
 
 # === Hover Logic ===
 func _update_hover_value(mouse_position: Vector2) -> void:
@@ -62,6 +62,7 @@ func _update_hover_value(mouse_position: Vector2) -> void:
 
 	# Hover only if mouse is close to actual curve Y position
 	_hover_index = left_index if _is_within_vertical_threshold(mouse_position.y, y_at_cursor) else -1
+	get_tooltip()			# Trigger tooltip update
 
 func _is_within_vertical_threshold(mouse_y: float, line_y: float) -> bool:
 	return abs(mouse_y - line_y) <= hover_threshold
@@ -107,5 +108,5 @@ func _get_interpolated_y(left_index: int, right_index: int, t: float) -> float:
 # === Tooltip ===
 func _get_tooltip(_at_position: Vector2) -> String:
 	if _hover_index >= 0:
-		return "Loss: %2.4f" % loss_values[_hover_index]
+		return "Loss at epoch %d: %2.4f" % [_hover_index, loss_values[_hover_index]]
 	return ""

@@ -1,22 +1,9 @@
 [gd_scene load_steps=5 format=3 uid="uid://cw7fa15xe8eok"]
 
+[ext_resource type="Theme" uid="uid://borx7v1oj4xbe" path="res://assets/themes/loss_graph/loss_graph_dark.tres" id="1_fyvnx"]
 [ext_resource type="Script" uid="uid://dnqehf7mhtl2p" path="res://scripts/visuals/loss_graph/loss_graph_panel.gd" id="1_yinru"]
+[ext_resource type="Script" uid="uid://ckslrqyk8o8rk" path="res://scripts/visuals/loss_graph/grid_layer.gd" id="2_x62gf"]
 [ext_resource type="Script" uid="uid://1t0u6ccmqp0s" path="res://scripts/visuals/loss_graph/loss_graph.gd" id="2_yinru"]
-
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_yinru"]
-content_margin_left = 10.0
-content_margin_top = 10.0
-content_margin_right = 10.0
-content_margin_bottom = 10.0
-bg_color = Color(0.15686275, 0.17254902, 0.20392157, 1)
-
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_glga7"]
-content_margin_left = 5.0
-content_margin_bottom = 5.0
-bg_color = Color(0.5176471, 0.5176471, 0.5176471, 0)
-border_width_left = 5
-border_width_bottom = 5
-border_color = Color(0.67058825, 0.69803923, 0.7490196, 1)
 
 [node name="LossGraphPanel" type="PanelContainer" node_paths=PackedStringArray("graph_node", "title_label", "loss_value_label", "epoch_value_label")]
 anchors_preset = 15
@@ -24,9 +11,10 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-theme_override_styles/panel = SubResource("StyleBoxFlat_yinru")
+theme = ExtResource("1_fyvnx")
+theme_type_variation = &"Background"
 script = ExtResource("1_yinru")
-graph_node = NodePath("VBoxContainer/graph_container/graph")
+graph_node = NodePath("VBoxContainer/graph_container/Graph")
 title_label = NodePath("VBoxContainer/HBoxContainer/Title")
 loss_value_label = NodePath("VBoxContainer/HBoxContainer/Loss")
 epoch_value_label = NodePath("VBoxContainer/HBoxContainer/Epoch")
@@ -41,8 +29,7 @@ layout_mode = 2
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 6
-theme_override_colors/font_color = Color(0.67058825, 0.69803923, 0.7490196, 1)
-theme_override_font_sizes/font_size = 28
+theme_type_variation = &"LabelTitle"
 text = "Loss over epochs"
 horizontal_alignment = 1
 vertical_alignment = 1
@@ -50,7 +37,7 @@ vertical_alignment = 1
 [node name="Loss" type="Label" parent="VBoxContainer/HBoxContainer"]
 layout_mode = 2
 size_flags_horizontal = 8
-theme_override_colors/font_color = Color(0.5176471, 0.54901963, 0.59607846, 1)
+theme_type_variation = &"LabelInfo"
 text = "Loss : 10.000"
 horizontal_alignment = 2
 vertical_alignment = 1
@@ -58,7 +45,7 @@ vertical_alignment = 1
 [node name="Epoch" type="Label" parent="VBoxContainer/HBoxContainer"]
 layout_mode = 2
 size_flags_horizontal = 8
-theme_override_colors/font_color = Color(0.5176471, 0.54901963, 0.59607846, 1)
+theme_type_variation = &"LabelInfo"
 text = "epoch : 10.000"
 horizontal_alignment = 2
 vertical_alignment = 1
@@ -66,9 +53,14 @@ vertical_alignment = 1
 [node name="graph_container" type="PanelContainer" parent="VBoxContainer"]
 layout_mode = 2
 size_flags_vertical = 3
-theme_override_styles/panel = SubResource("StyleBoxFlat_glga7")
+theme_type_variation = &"Graph"
 
-[node name="graph" type="Control" parent="VBoxContainer/graph_container"]
+[node name="Grid" type="Control" parent="VBoxContainer/graph_container"]
+layout_mode = 2
+script = ExtResource("2_x62gf")
+
+[node name="Graph" type="Control" parent="VBoxContainer/graph_container" node_paths=PackedStringArray("grid")]
 layout_mode = 2
 mouse_filter = 1
 script = ExtResource("2_yinru")
+grid = NodePath("../Grid")
