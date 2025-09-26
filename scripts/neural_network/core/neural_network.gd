@@ -28,7 +28,7 @@ var cached_pre_act_layer_outputs: Array[PackedFloat32Array] = []     ## Cached o
 func _init(config: Dictionary) -> void:
 	var defaults: Dictionary = {
 		KEYS.LAYER_SIZES: [] as Array[int],
-		KEYS.RUNNER: null,
+		KEYS.RUNNER: ForwardPassRunner.new(),
 		KEYS.HIDDEN_ACT: Activations.Type.RELU,
 		KEYS.OUTPUT_ACT: Activations.Type.SIGMOID,
 		KEYS.WEIGHT_INIT: NetworkLayer.WeightInitialization.XAVIER

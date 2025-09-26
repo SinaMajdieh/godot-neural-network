@@ -28,6 +28,12 @@ func create_buffer(data: Variant) -> RID:
 		data.to_byte_array()
 	)
 
+func create_uniform_buffer(data: Variant) -> RID:
+	return rd.uniform_buffer_create(
+		data.size() * 4,
+		data.to_byte_array()
+	)
+
 func create_empty_buffer(size_in_floats: int) -> RID:
 	var data: PackedFloat32Array = PackedFloat32Array()
 	data.resize(size_in_floats)
@@ -70,6 +76,24 @@ func _dispatch_compute(
 		ceil(total_threads / float(threads_per_group))
 	)
 	rd.compute_list_dispatch(cl, workgroups, 1, 1)
+	rd.compute_list_end()
+	rd.submit()
+	rd.sync()
+# New method for 2D grid dispatch
+func _dispatch_compute_2d(
+	pipeline: RID,
+	uniform_set: RID,
+	total_threads_x: int,
+	total_threads_y: int,
+	threads_per_group_x: int = 64,
+	threads_per_group_y: int = 64
+) -> void:
+	var cl: int = rd.compute_list_begin()
+	rd.compute_list_bind_compute_pipeline(cl, pipeline)
+	rd.compute_list_bind_uniform_set(cl, uniform_set, 0)
+	var workgroups_x: int = int(ceil(total_threads_x / float(threads_per_group_x)))
+	var workgroups_y: int = int(ceil(total_threads_y / float(threads_per_group_y)))
+	rd.compute_list_dispatch(cl, workgroups_x, workgroups_y, 1)
 	rd.compute_list_end()
 	rd.submit()
 	rd.sync()

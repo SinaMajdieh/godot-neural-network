@@ -1,0 +1,72 @@
+[gd_scene load_steps=6 format=3 uid="uid://rn1sxgdba5ed"]
+
+[ext_resource type="Theme" uid="uid://borx7v1oj4xbe" path="res://assets/themes/loss_graph/loss_graph_dark.tres" id="1_fyvnx"]
+[ext_resource type="Script" uid="uid://cdnrv2qkxegbe" path="res://examples/visual_training/plot/plot_panel.gd" id="2_3pv7p"]
+[ext_resource type="Script" uid="uid://ckslrqyk8o8rk" path="res://scripts/visuals/loss_graph/grid_layer.gd" id="2_x62gf"]
+[ext_resource type="Script" uid="uid://cfu6g28gknj4" path="res://examples/visual_training/plot/plot.gd" id="4_i7itu"]
+[ext_resource type="Script" uid="uid://o1cnvwo3ocqq" path="res://examples/visual_training/plot/classification.gd" id="5_i7itu"]
+
+[node name="LossGraphPanel" type="PanelContainer" node_paths=PackedStringArray("graph_node", "boundary", "title_label", "x_value_label", "y_value_label")]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme = ExtResource("1_fyvnx")
+theme_type_variation = &"Background"
+script = ExtResource("2_3pv7p")
+graph_node = NodePath("VBoxContainer/graph_container/Graph")
+boundary = NodePath("VBoxContainer/graph_container/Classification")
+title_label = NodePath("VBoxContainer/HBoxContainer/Title")
+x_value_label = NodePath("VBoxContainer/HBoxContainer/X")
+y_value_label = NodePath("VBoxContainer/HBoxContainer/Y")
+
+[node name="VBoxContainer" type="VBoxContainer" parent="."]
+layout_mode = 2
+
+[node name="HBoxContainer" type="VBoxContainer" parent="VBoxContainer"]
+layout_mode = 2
+
+[node name="Title" type="Label" parent="VBoxContainer/HBoxContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 6
+theme_type_variation = &"LabelTitle"
+text = "Point Plot Title"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="X" type="Label" parent="VBoxContainer/HBoxContainer"]
+layout_mode = 2
+size_flags_horizontal = 8
+theme_type_variation = &"LabelInfo"
+text = "X : 10.000"
+horizontal_alignment = 2
+vertical_alignment = 1
+
+[node name="Y" type="Label" parent="VBoxContainer/HBoxContainer"]
+layout_mode = 2
+size_flags_horizontal = 8
+theme_type_variation = &"LabelInfo"
+text = "Y : 10.000"
+horizontal_alignment = 2
+vertical_alignment = 1
+
+[node name="graph_container" type="PanelContainer" parent="VBoxContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+theme_type_variation = &"Graph"
+
+[node name="Grid" type="Control" parent="VBoxContainer/graph_container"]
+layout_mode = 2
+script = ExtResource("2_x62gf")
+
+[node name="Graph" type="Control" parent="VBoxContainer/graph_container" node_paths=PackedStringArray("grid")]
+layout_mode = 2
+mouse_filter = 1
+script = ExtResource("4_i7itu")
+grid = NodePath("../Grid")
+
+[node name="Classification" type="TextureRect" parent="VBoxContainer/graph_container"]
+layout_mode = 2
+script = ExtResource("5_i7itu")

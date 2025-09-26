@@ -199,8 +199,6 @@ achieving **~97% test accuracy** using Categorical Cross‑Entropy loss and Tanh
 **GIF Preview:**
 ![Digit Recognition Demo](assets/demo/demo_digits.gif)
 
----
-
 ### Doodle Recognition Demo
 
 Trains on **9,000 images** across **9 doodle categories** (e.g., lighthouse, guitar, cat),  
@@ -215,6 +213,15 @@ featuring smooth interpolation, hover tooltips with exact loss values, and theme
 Helps visually monitor convergence stability during training.  
 **GIF Preview:**
 ![Loss over Epoch Visualization](assets/demo/loss_visualization_demo.gif)
+
+### Spiral Two‑Class Classification Demo
+
+Generates a **synthetic spiral dataset** with two interleaved classes,  
+trains a fully‑connected neural network to classify the points,  
+and visualizes the learned **decision boundary** directly in the plot after training.  
+Demonstrates non‑linear separation capability and real‑time GPU‑accelerated rendering.  
+**Screenshot Preview:** 
+![Decision Boundary Demo](assets/demo/decision_boundary.png)
 
 ### Motivation
 

@@ -31,7 +31,7 @@ func _init(config: Dictionary) -> void:
 	# Merge user config with defaults
 	var defaults: Dictionary = {
 		KEYS.NETWORK: null,
-		KEYS.RUNNER: null,
+		KEYS.RUNNER: BackwardPassRunner.new(),
 		KEYS.LOSS: Loss.Type.BCE,
 		KEYS.LEARNING_RATE: 0.1,
 		KEYS.LAMBDA_L2: 1e-4,
