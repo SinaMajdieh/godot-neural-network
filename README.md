@@ -1,6 +1,6 @@
 # Godot Neural Network Framework
 
-![Loss Visualization Demo](assets/demo/loss_visualization_demo.gif)
+![Loss Visualization Demo](assets/demo/decision_boundary_loss_1.gif)
 ![Doodle Recognition Demo](assets/demo/demo_doodle.gif)
 
 ## Introduction
@@ -218,10 +218,10 @@ Helps visually monitor convergence stability during training.
 
 Generates a **synthetic spiral dataset** with two interleaved classes,  
 trains a fully‑connected neural network to classify the points,  
-and visualizes the learned **decision boundary** directly in the plot after training.  
+and visualizes the learned **decision boundary** directly in the plot while training.  
 Demonstrates non‑linear separation capability and real‑time GPU‑accelerated rendering.  
-**Screenshot Preview:** 
-![Decision Boundary Demo](assets/demo/decision_boundary.png)
+**Screenshot Preview:**
+![Decision Boundary Demo](assets/demo/decision_boundary.gif)
 
 ### Motivation
 

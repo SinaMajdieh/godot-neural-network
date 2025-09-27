@@ -6,7 +6,7 @@
 [ext_resource type="Script" uid="uid://cfu6g28gknj4" path="res://examples/visual_training/plot/plot.gd" id="4_i7itu"]
 [ext_resource type="Script" uid="uid://o1cnvwo3ocqq" path="res://examples/visual_training/plot/classification.gd" id="5_i7itu"]
 
-[node name="LossGraphPanel" type="PanelContainer" node_paths=PackedStringArray("graph_node", "boundary", "title_label", "x_value_label", "y_value_label")]
+[node name="LossGraphPanel" type="PanelContainer" node_paths=PackedStringArray("graph_node", "boundary", "title_label", "loss_label", "epoch_label", "decision_boundary_label")]
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
@@ -18,8 +18,9 @@ script = ExtResource("2_3pv7p")
 graph_node = NodePath("VBoxContainer/graph_container/Graph")
 boundary = NodePath("VBoxContainer/graph_container/Classification")
 title_label = NodePath("VBoxContainer/HBoxContainer/Title")
-x_value_label = NodePath("VBoxContainer/HBoxContainer/X")
-y_value_label = NodePath("VBoxContainer/HBoxContainer/Y")
+loss_label = NodePath("VBoxContainer/HBoxContainer/VBoxContainer/Loss")
+epoch_label = NodePath("VBoxContainer/HBoxContainer/Epoch")
+decision_boundary_label = NodePath("VBoxContainer/HBoxContainer/VBoxContainer/DecisionBoundary")
 
 [node name="VBoxContainer" type="VBoxContainer" parent="."]
 layout_mode = 2
@@ -36,19 +37,31 @@ text = "Point Plot Title"
 horizontal_alignment = 1
 vertical_alignment = 1
 
-[node name="X" type="Label" parent="VBoxContainer/HBoxContainer"]
+[node name="VBoxContainer" type="HBoxContainer" parent="VBoxContainer/HBoxContainer"]
 layout_mode = 2
-size_flags_horizontal = 8
+size_flags_vertical = 3
+
+[node name="DecisionBoundary" type="Label" parent="VBoxContainer/HBoxContainer/VBoxContainer"]
+layout_mode = 2
+size_flags_horizontal = 2
 theme_type_variation = &"LabelInfo"
-text = "X : 10.000"
+text = "Decision Boundary Rendering time : 10.000"
 horizontal_alignment = 2
 vertical_alignment = 1
 
-[node name="Y" type="Label" parent="VBoxContainer/HBoxContainer"]
+[node name="Loss" type="Label" parent="VBoxContainer/HBoxContainer/VBoxContainer"]
+layout_mode = 2
+size_flags_horizontal = 10
+theme_type_variation = &"LabelInfo"
+text = "Loss : 10.000"
+horizontal_alignment = 2
+vertical_alignment = 1
+
+[node name="Epoch" type="Label" parent="VBoxContainer/HBoxContainer"]
 layout_mode = 2
 size_flags_horizontal = 8
 theme_type_variation = &"LabelInfo"
-text = "Y : 10.000"
+text = "Epoch : 10.000"
 horizontal_alignment = 2
 vertical_alignment = 1
 

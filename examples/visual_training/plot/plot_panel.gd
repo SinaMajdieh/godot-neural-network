@@ -1,21 +1,24 @@
 extends Control
 class_name PointPlotPanel
-## UI panel wrapping the PointPlot class into a Control-compatible widget.
-## Can be instantiated and added directly to any scene.
 
-const PANEL_SCENE: String = "res://examples/visual_training/plot_panel.tscn"
+# === Constants ===
+const PANEL_SCENE: String = "res://examples/visual_training/plot/plot_panel.tscn"
 
-# === Exported properties ===
-@export var graph_node: PointPlot                # Panel's Plot node instance
-@export var boundary: ClassificationBoundary
-@export var title_label: Label
-@export var x_value_label: Label
-@export var y_value_label: Label
+# === Exported UI Components ===
+@export var graph_node: PointPlot					# Plotting surface
+@export var boundary: ClassificationBoundary		# Decision boundary overlay
+@export var title_label: Label						# Panel title text
+@export var loss_label: Label						# Displays current loss
+@export var epoch_label: Label						# Displays current epoch
+@export var decision_boundary_label: Label			# Displays render timing
 
+# === Internal State ===
 var title: String:
 	set(value):
+		# Why: Synchronize internal title string with UI label
 		title = value
 		title_label.text = title
+
 
 # === Constructor ===
 static func new_panel(
@@ -23,22 +26,36 @@ static func new_panel(
 	max_points_: int = 200,
 	point_radius_: float = PointPlot.DEFAULT_POINT_RADIUS
 ) -> PointPlotPanel:
+	# Why: Load panel scene so it can be instantiated programmatically
 	var packed: PackedScene = load(PANEL_SCENE)
 	var panel_instance: PointPlotPanel = packed.instantiate() as PointPlotPanel
+
+	# Why: Apply initial configuration before returning instance
 	panel_instance.graph_node.max_points = max_points_
 	panel_instance.graph_node.point_radius = point_radius_
 	panel_instance.title = title_
 	return panel_instance
 
-# === Public API ===
-## Add a point with optional color; updates the displayed X/Y labels.
-func add_point(point_position: Vector2, color: Color = PointPlot.DEFAULT_POINT_COLOR) -> void:
-	graph_node.add_point(point_position, color)
-	x_value_label.text = "X: %6.2f" % point_position.x
-	y_value_label.text = "Y: %6.2f" % point_position.y
 
-## Clears the plot and resets value labels.
+# === Public API ===
+func add_point(point_position: Vector2, color: Color = PointPlot.DEFAULT_POINT_COLOR) -> void:
+	# Why: Add a point to the plot with an optional color override
+	graph_node.add_point(point_position, color)
+
+
 func clear() -> void:
+	# Why: Reset plot and clear informational labels
 	graph_node.clear()
-	x_value_label.text = ""
-	y_value_label.text = ""
+	loss_label.text = ""
+	epoch_label.text = ""
+
+
+func update_epoch_info(loss: float, epoch: int) -> void:
+	# Why: Show latest loss and epoch during training
+	loss_label.text = "Loss: %3.3f" % loss
+	epoch_label.text = "Epoch: %6d" % epoch
+
+
+func update_decision_boundary_label(value: int) -> void:
+	# Why: Show render timing for decision boundary updates
+	decision_boundary_label.text = "Decision Boundary Rendering time : %d ms" % value

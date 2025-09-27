@@ -2,8 +2,7 @@
 
 [ext_resource type="Script" uid="uid://d4kkjsoi13jy5" path="res://examples/visual_training/classification_demo.gd" id="1_pwrna"]
 
-[node name="Plot" type="Control"]
-layout_mode = 3
+[node name="Plot" type="HBoxContainer" node_paths=PackedStringArray("boundary_plot", "loss_plot")]
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
@@ -12,6 +11,23 @@ grow_vertical = 2
 script = ExtResource("1_pwrna")
 animation_duration = 0.1
 data_points = 300
-turns = 1.5
+turns = 2.0
 radius_growth = 0.6
 noise = 0.0
+boundary_rendering_scale = 0.1
+boundary_plot = NodePath("BoundaryPlot")
+loss_plot = NodePath("LossPlot")
+layer_sizes = Array[int]([2, 15, 15, 15, 1])
+hidden_activation = 4
+weight_init = 0
+learning_rate = 0.4
+epochs = 500
+batch_size = 64
+
+[node name="BoundaryPlot" type="Control" parent="."]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="LossPlot" type="Control" parent="."]
+layout_mode = 2
+size_flags_horizontal = 3
