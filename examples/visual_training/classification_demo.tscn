@@ -9,18 +9,15 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 script = ExtResource("1_pwrna")
-animation_duration = 0.1
 data_points = 300
-turns = 2.0
-radius_growth = 0.6
-noise = 0.0
+turns = 2.055
+noise = 0.13
 boundary_rendering_scale = 0.1
+start_training = true
 boundary_plot = NodePath("BoundaryPlot")
 loss_plot = NodePath("LossPlot")
 layer_sizes = Array[int]([2, 15, 15, 15, 1])
-hidden_activation = 4
-weight_init = 0
-learning_rate = 0.4
+learning_rate = 0.6
 epochs = 500
 batch_size = 64
 
@@ -29,5 +26,6 @@ layout_mode = 2
 size_flags_horizontal = 3
 
 [node name="LossPlot" type="Control" parent="."]
+visible = false
 layout_mode = 2
 size_flags_horizontal = 3

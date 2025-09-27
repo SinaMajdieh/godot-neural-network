@@ -2,21 +2,44 @@ extends Control
 
 # === Test Bench Settings ===
 @export_category("Test Bench Settings")
-@export var animation_duration: float = 1.5								# Why: Smooth delay before visual updates
-@export var data_points: int = 100										# Why: Size of synthetic dataset
-@export var turns: float = 3.0											# Why: Spiral curve rotation multiplier
-@export var radius_growth: float = 0.1									# Why: Controls radial spread speed
-@export var noise: float = 0.5											# Why: Adds randomness to point positions
-@export var class_a_color: Color = Color(0.2, 0.6, 1.0)					# Blue class for spiral A
-@export var class_b_color: Color = Color(1.0, 0.4, 0.2)					# Orange class for spiral B
-@export_range(0.1, 1.0, 0.1) var boundary_rendering_scale: float = 1.0	# Why: Lower for faster rendering
+@export var animation_duration: float = 1.5  # Why: Smooth delay before visual updates
+@export var data_points: int = 100: 
+	set(value):
+		if value != data_points:
+			data_points = value
+			_update_generated_points()
+@export var turns: float = 3.0: 
+	set(value):
+		if value != turns:
+			turns = value
+			_update_generated_points()
+@export var radius_growth: float = 0.1: 
+	set(value):
+		if value != radius_growth:
+			radius_growth = value
+			_update_generated_points()
+@export var noise: float = 0.5: 
+	set(value):
+		if value != noise:
+			noise = value
+			_update_generated_points()
+@export var class_a_color: Color = Color(0.2, 0.6, 1.0): 
+	set(value):
+		class_a_color = value
+		_update_generated_points()
+@export var class_b_color: Color = Color(1.0, 0.4, 0.2): 
+	set(value):
+		class_b_color = value
+		_update_generated_points()
+@export_range(0.1, 1.0, 0.1) var boundary_rendering_scale: float = 1.0
+@export var start_training: bool = false: set = _start_training
 
-@export var boundary_plot: Control										# Container for decision boundary
-@export var loss_plot: Control											# Container for loss graph panel
+@export var boundary_plot: Control
+@export var loss_plot: Control
 
 # === Network Parameters ===
 @export_category("Network Parameters")
-@export var layer_sizes: Array[int] = [2, 10, 10, 10, 1]					# Why: Fully‑connected architecture
+@export var layer_sizes: Array[int] = [2, 10, 10, 10, 1]
 @export var hidden_activation: Activations.Type = Activations.Type.TANH
 @export var output_activation: Activations.Type = Activations.Type.SIGMOID
 @export var weight_init: NetworkLayer.WeightInitialization = NetworkLayer.WeightInitialization.XAVIER
@@ -30,6 +53,7 @@ extends Control
 @export var batch_size: int = 10
 
 # === Internal State ===
+var _runtime_ready: bool = false
 var training_thread: Thread
 var plot_panel: PointPlotPanel
 var loss_panel: LossGraphPanel
@@ -44,29 +68,44 @@ var trainer: Trainer
 var color_map_runner: ColorMapRunner
 
 
+# === Node Lifecycle ===
 func _ready() -> void:
-	# === Attach plotting panels ===
+	_runtime_ready = true
+	
+	# Attach plot panels
 	plot_panel = PointPlotPanel.new_panel("Two‑Class Scatter", data_points, 4.0)
 	boundary_plot.add_child(plot_panel)
-	
 	loss_panel = LossGraphPanel.new_panel()
 	loss_plot.add_child(loss_panel)
 
-	# === Generate training data ===
+	# Generate initial dataset
 	_generate_spiral_points()
 
-	# === Create input grid for boundary rendering ===
-	await get_tree().process_frame	# Why: Wait for layout to stabilize before sampling
+	# Create input grid for boundary rendering
+	await get_tree().process_frame
 	plot_inputs = plot_panel.boundary.generate_full_plot_input_array(
 		plot_panel.graph_node,
 		plot_panel.graph_node.size,
 		boundary_rendering_scale
 	)
 	graph_size = plot_panel.graph_node.size
-	
-	# === Start async training thread ===
-	training_thread = Thread.new()
-	training_thread.start(_run_training)
+
+	# Optional auto-start training
+	_start_training(start_training)
+
+
+# === Setters & State Updates ===
+func _update_generated_points() -> void:
+	if _runtime_ready:
+		_generate_spiral_points()
+
+func _start_training(value: bool) -> void:
+	start_training = value
+	if not _runtime_ready:
+		return
+	if start_training and (training_thread == null or not training_thread.is_started()):
+		training_thread = Thread.new()
+		training_thread.start(_run_training)
 
 
 # === Data Generation ===
@@ -77,7 +116,6 @@ func _generate_spiral_points() -> void:
 	for i: int in range(data_points):
 		var angle: float = (float(i) / data_points) * turns * TAU
 		var radius: float = (radius_growth * angle) + randf_range(-noise, noise)
-
 		if i % 2 == 0:
 			# Class A spiral — clockwise
 			var x: float = cos(angle) * radius
@@ -95,11 +133,11 @@ func _generate_spiral_points() -> void:
 			plot_panel.add_point(Vector2(x_b, y_b), class_b_color)
 
 
-# === Training Thread Entry Point ===
+# === Training ===
 func _run_training() -> void:
 	color_map_runner = ColorMapRunner.new()
-
-	# === Build network ===
+	
+	# Build network
 	network = NeuralNetwork.new({
 		ConfigKeys.NETWORK.LAYER_SIZES  : layer_sizes,
 		ConfigKeys.NETWORK.HIDDEN_ACT   : hidden_activation,
@@ -107,7 +145,7 @@ func _run_training() -> void:
 		ConfigKeys.NETWORK.WEIGHT_INIT  : weight_init
 	})
 
-	# === Configure trainer ===
+	# Configure trainer
 	trainer = Trainer.new({
 		ConfigKeys.TRAINER.NETWORK       : network,
 		ConfigKeys.TRAINER.LOSS          : loss_function,
@@ -125,7 +163,6 @@ func _run_training() -> void:
 	call_deferred("_on_training_complete")
 
 
-# === Helper to run training and time it ===
 func _train_and_measure(
 	train_inputs: Array[PackedFloat32Array],
 	train_targets: Array[PackedFloat32Array]
@@ -134,32 +171,26 @@ func _train_and_measure(
 	trainer.train(train_inputs, train_targets)
 	return Time.get_ticks_msec() - start_time
 
-
-# === Cleanup after training ===
 func _on_training_complete() -> void:
 	training_thread.wait_to_finish()
 
 
-# === On each epoch finished ===
+# === Epoch Callback ===
 func _on_epoch_finished(loss: float, epoch: int) -> void:
 	plot_panel.call_deferred("update_epoch_info", loss, epoch)
 	loss_panel.call_deferred("add_loss", loss, epoch)
 	_render_boundary()
 
 
-# === Decision Boundary Rendering (GPU) ===
+# === Decision Boundary Rendering ===
 func _render_boundary() -> void:
 	var start_time: int = Time.get_ticks_msec()
 	var predictions: PackedFloat32Array = network.forward_pass(plot_inputs)
-
 	var forward_pass_duration_ms: int = Time.get_ticks_msec() - start_time
 	print_rich("[color=yellow]Forward pass time: %d ms" % forward_pass_duration_ms)
 	plot_panel.call_deferred("update_decision_boundary_label", forward_pass_duration_ms)
 
-	# === Assemble prediction buffer for GPU shader ===
 	var predictions_buffer_rid: RID = color_map_runner.create_buffer(predictions)
-
-	# === GPU color map dispatch ===
 	var output_texture_rid: RID = color_map_runner.dispatch_color_map(
 		predictions_buffer_rid,
 		int(graph_size.x * boundary_rendering_scale),
@@ -171,7 +202,6 @@ func _render_boundary() -> void:
 		8, 8
 	)
 
-	# === Upload rendered texture to UI ===
 	var raw_bytes: PackedByteArray = color_map_runner.rd.texture_get_data(output_texture_rid, 0)
 	plot_panel.boundary.call_deferred(
 		"set_texture_bytes",
