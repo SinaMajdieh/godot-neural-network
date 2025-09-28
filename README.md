@@ -1,6 +1,6 @@
 # Godot Neural Network Framework
 
-![Loss Visualization Demo](assets/demo/decision_boundary_loss_1.gif)
+![Loss Visualization Demo](assets/demo/decision_boundary_loss_accuracy_lr.gif)
 ![Doodle Recognition Demo](assets/demo/demo_doodle.gif)
 
 ## Introduction
@@ -140,7 +140,14 @@ var trainer: Trainer = Trainer.new({
 			)
 })
 
-trainer.lr_schedular = LRSchedular.new(LRSchedular.Type.COSINE, 200, 0.01)
+trainer.lr_schedular = LRSchedular.new(
+	LRSchedular.Type.COSINE,
+	{
+		ConfigKeys.LR_SCHEDULAR.STARTING_LR : 0.07,
+		ConfigKeys.LR_SCHEDULAR.MIN_LR : 0.01,
+		ConfigKeys.LR_SCHEDULAR.EPOCHS : 100
+	}
+)
 
 # --- Train ---
 trainer.train(split.train_inputs, split.train_targets)
@@ -169,7 +176,7 @@ var network: NeuralNetwork = NeuralNetworkSerializer.import(forward_runner, netw
 
 ```gdscript
 # Instantly create and attach a Loss over Epoch visualization panel.
-var loss_panel: LossGraphPanel = LossGraphPanel.new_panel(
+var loss_panel: EpochMetricGraphPanel = EpochMetricGraphPanel.new_panel(
 	"Training Loss",   # Panel title
 	200,               # Max data points to store
 	Color("61AFEF")    # Line color
@@ -177,7 +184,7 @@ var loss_panel: LossGraphPanel = LossGraphPanel.new_panel(
 add_child(loss_panel)
 
 # Later, during training:
-loss_panel.add_loss(current_loss)
+loss_panel.add_metric(current_loss)
 ```
 
 ### Why This Matters
@@ -220,8 +227,8 @@ Generates a **synthetic spiral dataset** with two interleaved classes,
 trains a fully‑connected neural network to classify the points,  
 and visualizes the learned **decision boundary** directly in the plot while training.  
 Demonstrates non‑linear separation capability and real‑time GPU‑accelerated rendering.  
-**Screenshot Preview:**
-![Decision Boundary Demo](assets/demo/decision_boundary.gif)
+**GIF Preview:**
+![Decision Boundary Demo](assets/demo/decision_boundary_1.gif)
 
 ### Motivation
 

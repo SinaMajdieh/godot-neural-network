@@ -180,7 +180,7 @@ func _run_training() -> void:
 
 # Called upon finshing each epoch
 func on_epoch_finished(loss_value: float, epoch: int) -> void:
-	loss_panel.call_deferred("add_loss", loss_value, epoch)
+	loss_panel.call_deferred("add_metric", loss_value, epoch)
 
 ## Construct network with configured layers and activations
 func _create_network(shader_runner: ForwardPassRunner) -> NeuralNetwork:

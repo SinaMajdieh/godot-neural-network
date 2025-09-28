@@ -2,12 +2,15 @@
 
 [ext_resource type="Script" uid="uid://d4kkjsoi13jy5" path="res://examples/visual_training/classification_demo.gd" id="1_pwrna"]
 
-[node name="Plot" type="HBoxContainer" node_paths=PackedStringArray("boundary_plot", "loss_plot")]
+[node name="Plot" type="GridContainer" node_paths=PackedStringArray("boundary_plot", "loss_plot", "lr_plot", "accuracy_plot")]
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+theme_override_constants/h_separation = 0
+theme_override_constants/v_separation = 0
+columns = 2
 script = ExtResource("1_pwrna")
 data_points = 300
 turns = 2.055
@@ -16,16 +19,36 @@ boundary_rendering_scale = 0.1
 start_training = true
 boundary_plot = NodePath("BoundaryPlot")
 loss_plot = NodePath("LossPlot")
-layer_sizes = Array[int]([2, 15, 15, 15, 1])
+lr_plot = NodePath("LearningRatePlot")
+accuracy_plot = NodePath("AccuracyPlot")
+layer_sizes = Array[int]([2, 20, 20, 20, 1])
+hidden_activation = 4
+weight_init = 0
 learning_rate = 0.6
-epochs = 500
 batch_size = 64
+schedular_params = Dictionary[String, Variant]({
+"decay_rate": 0.0,
+"epochs": 300,
+"min_lr": 0.216,
+"starting_lr": 0.6,
+"step_size": 0,
+"warmup_epochs": 0
+})
 
 [node name="BoundaryPlot" type="Control" parent="."]
 layout_mode = 2
 size_flags_horizontal = 3
+size_flags_vertical = 3
 
 [node name="LossPlot" type="Control" parent="."]
-visible = false
 layout_mode = 2
 size_flags_horizontal = 3
+size_flags_vertical = 3
+
+[node name="LearningRatePlot" type="Control" parent="."]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+
+[node name="AccuracyPlot" type="Control" parent="."]
+layout_mode = 2
