@@ -58,7 +58,7 @@ var training_targets_dic: Dictionary[int, Array] = {}
 var training_inputs: Array[PackedFloat32Array] = []
 var training_targets: Array[PackedFloat32Array] = []
 
-var loss_panel: LossGraphPanel
+var loss_panel: EpochMetricGraphPanel
 
 # -------------------------------------------------------------------
 # Lifecycle
@@ -68,7 +68,7 @@ func _ready() -> void:
 	_init_empty_datasets()
 	_process_inputs_targets()
 
-	loss_panel = LossGraphPanel.new_panel()
+	loss_panel = EpochMetricGraphPanel.new_panel()
 	add_child(loss_panel)
 	print("Number of images: %d" % training_inputs.size())
 
@@ -143,7 +143,14 @@ func _run_training() -> void:
 				gradient_clip_threshold
 			)
 	})
-	trainer.lr_schedular = LRSchedular.new(LRSchedular.Type.COSINE, epochs, learning_rate * 0.25)
+	trainer.lr_schedular = LRSchedular.new(
+		LRSchedular.Type.COSINE,
+		{
+			ConfigKeys.LR_SCHEDULAR.STARTING_LR : learning_rate,
+			ConfigKeys.LR_SCHEDULAR.MIN_LR : learning_rate * 0.25,
+			ConfigKeys.LR_SCHEDULAR.EPOCHS : epochs
+		}
+	)
 	trainer.epoch_finished.connect(on_epoch_finished)
 	var satisfied: bool = false
 	while not satisfied:

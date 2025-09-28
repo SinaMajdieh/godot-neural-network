@@ -5,14 +5,14 @@ extends Control
 @export var inital_loss: float = 2.5
 
 func _ready() -> void:
-	var loss_panel: LossGraphPanel = LossGraphPanel.new_panel()
+	var loss_panel: EpochMetricGraphPanel = EpochMetricGraphPanel.new_panel()
 	add_child(loss_panel)
 
 	var loss: float = inital_loss
 	# Example: simulate adding loss values
 	for i: int in range(data_points):
 		await get_tree().create_timer(animation_duration / data_points).timeout
-		loss_panel.add_loss(loss, i)
+		loss_panel.add_metric(loss, i)
 		loss = get_next_loss_non_linear(loss)
 		
 

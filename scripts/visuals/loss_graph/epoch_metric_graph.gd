@@ -1,5 +1,5 @@
 extends Control
-class_name LossGraph
+class_name EpochMetricGraph
 
 # === Constants ===
 const DEFAULT_LINE_COLOR: Color = Color("61AFEF")	# Default line color for graph
@@ -16,7 +16,7 @@ var loss_values: Array[float] = []					# Stored loss values in order
 var _hover_index: int = -1							# Currently hovered point index (-1 = none)
 
 # === Public API ===
-func add_loss(value: float) -> void:
+func add_metric(value: float) -> void:
 	loss_values.append(value)
 	if loss_values.size() > max_points:				# Keep fixed-size buffer
 		loss_values.pop_front()

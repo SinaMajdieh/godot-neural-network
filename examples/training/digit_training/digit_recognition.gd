@@ -57,7 +57,7 @@ var training_targets_dic: Dictionary[int, Array] = {}
 var training_inputs: Array[PackedFloat32Array] = []
 var training_targets: Array[PackedFloat32Array] = []
 
-var loss_panel: LossGraphPanel
+var loss_panel: EpochMetricGraphPanel
 
 # -------------------------------------------------------------------
 # Lifecycle
@@ -67,7 +67,7 @@ func _ready() -> void:
 	_init_empty_datasets()
 	_process_inputs_targets()
 
-	loss_panel = LossGraphPanel.new_panel()
+	loss_panel = EpochMetricGraphPanel.new_panel()
 	add_child(loss_panel)
 
 	training_thread = Thread.new()
