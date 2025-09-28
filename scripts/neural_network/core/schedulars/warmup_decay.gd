@@ -14,6 +14,6 @@ func _init(config: Dictionary) -> void:
 func get_lr(epoch: int) -> float:
     if epoch < warmup_epochs:
         return starting_lr * (epoch + 1) / warmup_epochs
-    var t: int = epoch - total_epochs
+    var t: int = epoch - warmup_epochs
     var t_max: int = total_epochs - warmup_epochs
     return min_lr + 0.5 * (starting_lr - min_lr) * (1 + cos(PI * t / t_max))

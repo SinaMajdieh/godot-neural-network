@@ -21,12 +21,14 @@ var title: String :
 static func new_panel(
 	title_: String = "Loss over epochs",
 	metric_name_: String = "Loss",
-	max_points_: int = 200, 
+	max_points_: int = 200,
+	line_width_: float = 3.0,
 	line_color_: Color = EpochMetricGraph.DEFAULT_LINE_COLOR
 ) -> EpochMetricGraphPanel:
 	var packed: PackedScene = load(PANEL_SCENE)
 	var panel_instance: EpochMetricGraphPanel = packed.instantiate() as EpochMetricGraphPanel
 	panel_instance.graph_node.max_points = max_points_
+	panel_instance.graph_node.line_width = line_width_
 	panel_instance.graph_node.line_color = line_color_
 	panel_instance.title = title_
 	panel_instance.metric_name = metric_name_

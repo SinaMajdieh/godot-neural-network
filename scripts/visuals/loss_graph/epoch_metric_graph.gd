@@ -7,7 +7,7 @@ const DEFAULT_LINE_COLOR: Color = Color("61AFEF")	# Default line color for graph
 # === Exported Settings ===
 @export var max_points: int = 200					# Max number of points to store
 @export var line_color: Color = DEFAULT_LINE_COLOR	# Curve color
-@export var line_width: float = 3.0				# Curve thickness
+@export var line_width: float = 1.0				# Curve thickness
 @export var hover_threshold: float = 6.0			# Pixel distance for hover detection
 @export var grid: GraphGrid
 
@@ -108,5 +108,5 @@ func _get_interpolated_y(left_index: int, right_index: int, t: float) -> float:
 # === Tooltip ===
 func _get_tooltip(_at_position: Vector2) -> String:
 	if _hover_index >= 0:
-		return "Loss at epoch %d: %2.4f" % [_hover_index, loss_values[_hover_index]]
+		return "epoch %d: %2.4f" % [_hover_index, loss_values[_hover_index]]
 	return ""

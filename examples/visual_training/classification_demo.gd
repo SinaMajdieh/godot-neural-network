@@ -37,6 +37,7 @@ extends Control
 	set(value):
 		class_b_color = value
 		_update_generated_points()
+@export var plot_line_width: float = 3.0
 
 @export_range(0.1, 1.0, 0.1) var boundary_rendering_scale: float = 1.0
 @export var start_training: bool = false: set = _start_training
@@ -115,13 +116,13 @@ func _init_panels() -> void:
 	plot_panel = PointPlotPanel.new_panel("Two‑Class Scatter", data_points, 4.0)
 	boundary_plot.add_child(plot_panel)
 
-	loss_panel = EpochMetricGraphPanel.new_panel()
+	loss_panel = EpochMetricGraphPanel.new_panel("Loss over epochs", "Loss", epochs, plot_line_width)
 	loss_plot.add_child(loss_panel)
 
-	lr_panel = EpochMetricGraphPanel.new_panel("Learning rate over epochs", "Learning rate", 200, Color("98C379"))
+	lr_panel = EpochMetricGraphPanel.new_panel("Learning rate over epochs", "Learning rate", epochs, plot_line_width, Color("98C379"))
 	lr_plot.add_child(lr_panel)
 
-	accuracy_panel = EpochMetricGraphPanel.new_panel("Accuracy over epochs", "Accuracy", 200, Color("E5C07B"))
+	accuracy_panel = EpochMetricGraphPanel.new_panel("Accuracy over epochs", "Accuracy", epochs, plot_line_width, Color("E5C07B"))
 	accuracy_plot.add_child(accuracy_panel)
 
 
