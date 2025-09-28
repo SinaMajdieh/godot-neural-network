@@ -7,7 +7,7 @@ extends RefCounted
 
 const NETWORK: Dictionary = NeuralNetwork.KEYS
 const TRAINER: Dictionary = Trainer.KEYS
-
+const LR_SCHEDULAR: Dictionary = LRScheduleBase.KEYS
 const SHADERS_PATHS: Dictionary = {
 	FORWARD_PASS = ForwardPassRunner.DEFAULT_SHADER_PATH,
 	BACKWARD_PASS = BackwardPassRunner.DEFAULT_SHADER_PATH,

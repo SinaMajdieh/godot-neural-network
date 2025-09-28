@@ -53,7 +53,12 @@ func _init(config: Dictionary) -> void:
 		config[KEYS.BATCH_SIZE]
 	)
 
-	lr_schedular = LRSchedular.new(LRSchedular.Type.NONE)
+	lr_schedular = LRSchedular.new(
+		LRSchedular.Type.NONE, 
+		{
+			ConfigKeys.LR_SCHEDULAR.STARTING_LR: learning_rate
+		}
+	)
 
 func set_training_attributes(
 	loss_type_: Loss.Type,
@@ -79,7 +84,7 @@ func train(
 			full_input, full_targets, batch_size
 		)
 
-		learning_rate = lr_schedular.get_lr(epoch, learning_rate)
+		learning_rate = lr_schedular.get_lr(epoch)
 		_train_epoch(epoch, batches)
 
 func _train_epoch(

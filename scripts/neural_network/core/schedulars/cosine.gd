@@ -4,9 +4,11 @@ class_name CosineSchedular
 var total_epochs: int
 var min_lr : float
 
-func _init(total_epochs_: int, min_lr_: float) -> void:
-    total_epochs = total_epochs_
-    min_lr = min_lr_
+func _init(config: Dictionary) -> void:
+    super(config[KEYS.STARTING_LR])
+    total_epochs = config[KEYS.EPOCHS]
+    min_lr = config[KEYS.MIN_LR]
 
-func get_lr(epoch: int, lr: float) -> float:
-    return min_lr + 0.5 * (lr - min_lr) * (1 + cos(PI * epoch / total_epochs))
+
+func get_lr(epoch: int) -> float:
+    return min_lr + 0.5 * (starting_lr - min_lr) * (1 + cos(PI * epoch / total_epochs))
