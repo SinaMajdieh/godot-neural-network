@@ -11,6 +11,5 @@
 *.mono/
 *.godot/
 *.uid
-*.godot
 .editorconfig
 .vscode/
